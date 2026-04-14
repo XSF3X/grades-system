@@ -14,7 +14,6 @@
         body { font-family: 'HelveticaSky', Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #111; }
         .container { max-width: 100%; margin: 0 auto; background: #fff; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         
-        /* شاشة تسجيل الدخول الذكية */
         #login-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(240, 242, 245, 0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .login-box { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; border-top: 5px solid #1e3a8a; }
         .btn-login { display: block; width: 100%; padding: 14px; margin: 15px 0; font-size: 16px; border-radius: 10px; cursor: pointer; border: none; font-weight: bold; transition: 0.3s; font-family: inherit; }
@@ -23,7 +22,6 @@
         .btn-guest { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
         .btn-guest:hover { background: #e2e8f0; transform: translateY(-2px); }
         
-        /* حقل الباسوورد المدمج */
         .password-input { width: 100%; padding: 12px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 16px; text-align: center; font-family: inherit; margin-bottom: 10px; box-sizing: border-box; }
         .password-input:focus { outline: none; border-color: #3b82f6; }
 
@@ -41,7 +39,6 @@
 
         .hidden { display: none !important; }
         
-        /* إخفاء العناصر الحساسة في وضع الزائر */
         body.guest-mode .no-guest { display: none !important; }
         body.guest-mode .grade-input { pointer-events: none; } 
 
@@ -104,8 +101,8 @@
         <p style="color: #64748b; margin-bottom: 25px; font-size: 14px;">سجل الإنجاز الرقمي والمتابعة اليومية</p>
         
         <div id="login-options">
-            <button class="btn-login btn-teacher" onclick="showPasswordBox()"><i class="fas fa-chalkboard-teacher"></i> دخول المعلم (صلاحية كاملة)</button>
-            <button class="btn-login btn-guest" onclick="handleLogin('guest')"><i class="fas fa-eye"></i> دخول زائر / مدير (للاطلاع فقط)</button>
+            <button class="btn-login btn-teacher" onclick="showPasswordBox()"><i class="fas fa-chalkboard-teacher"></i> دخول المعلم </button>
+            <button class="btn-login btn-guest" onclick="handleLogin('guest')"><i class="fas fa-eye"></i> دخول زائر / مدير </button>
         </div>
 
         <div id="password-box" class="hidden">
@@ -207,10 +204,8 @@
     const TELE_TOKEN = "8609135687:AAHYkS2RzHqKEvv_yVAN97GolkiMZ13l1ys"; 
     const TELE_ID = "528941707";    
     
-    // كلمة المرور الخاصة بك كمعلم
-    const ADMIN_PASSWORD = "1234"; 
-    
-    // المدة المسموحة لترك الجهاز قبل تسجيل الخروج التلقائي (بالملي ثانية) - حالياً 10 دقائق
+    // كلمة المرور الافتراضية
+    const ADMIN_PASSWORD = "552255"; 
     const TIMEOUT_DURATION = 10 * 60 * 1000; 
 
     let isGuest = false;
@@ -252,7 +247,6 @@
 
     let activeKey = "";
     let currentActiveInput = null, currentActiveSIdx = null, currentActiveGIdx = null;
-    let syncTimer = null; 
 
     // ==========================================
     // واجهة تسجيل الدخول الذكية
@@ -276,7 +270,7 @@
                 isGuest = false;
                 document.body.classList.remove('guest-mode');
                 document.getElementById('guest-indicator').classList.add('hidden');
-                startAutoLogout(); // بدء عداد الحماية للمعلم فقط
+                startAutoLogout(); 
                 startGame();
             } else {
                 alert("عذراً، كلمة المرور غير صحيحة!");
@@ -291,7 +285,6 @@
         }
     }
 
-    // السماح بالدخول عند ضغط انتر في حقل الباسوورد
     document.getElementById('teacher-password').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') handleLogin('teacher');
     });
@@ -302,11 +295,7 @@
         init();
     }
 
-    // ==========================================
-    // نظام الإغلاق التلقائي (Session Timeout)
-    // ==========================================
     function startAutoLogout() {
-        // يتم إعادة ضبط العداد عند أي حركة (ماوس، كيبورد، ضغط)
         window.addEventListener('mousemove', resetLogoutTimer);
         window.addEventListener('keypress', resetLogoutTimer);
         window.addEventListener('click', resetLogoutTimer);
@@ -319,13 +308,10 @@
         inactivityTimer = setTimeout(forceLogout, TIMEOUT_DURATION);
     }
 
-    function forceLogout() {
-        // إعادة تحميل الصفحة بالكامل للخروج ومسح الذاكرة المؤقتة للواجهة
-        location.reload(); 
-    }
+    function forceLogout() { location.reload(); }
 
     // ==========================================
-    // تهيئة النظام
+    // تهيئة النظام والمزامنة المحسنة (مع تجاوز 406)
     // ==========================================
     function init() {
         const grid = document.getElementById('main-grid');
@@ -349,15 +335,20 @@
         
         if(isCloudEnabled) {
             setSyncStatus('جاري الجلب من السحابة...', 'syncing');
-            const { data, error } = await supabaseApp.from('class_records').select('*').eq('class_key', key).single();
+            // استخدام maybeSingle() بدلاً من single() لتجاوز الخطأ 406
+            const { data, error } = await supabaseApp.from('class_records').select('*').eq('class_key', key).maybeSingle();
+            
             if (data) {
                 localStorage.setItem('final_daily_' + key, JSON.stringify(data.grades_data || {}));
                 let allTasks = JSON.parse(localStorage.getItem('class_tasks_v1')) || {};
                 allTasks[key] = data.tasks_data || null;
                 localStorage.setItem('class_tasks_v1', JSON.stringify(allTasks));
                 setSyncStatus('مُحدث ومتزامن', 'synced');
+            } else if (error && error.code !== 'PGRST116') {
+                console.error(error);
+                setSyncStatus('خطأ بالاتصال', 'error-sync');
             } else {
-                setSyncStatus('جديد - يعمل محلياً', 'synced');
+                setSyncStatus('ملف جديد', 'synced');
             }
         }
 
