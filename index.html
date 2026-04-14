@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نظام المتابعة والإنجاز - مجمع اللهابة</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
-        /* تعريف الخطوط */
         @font-face { font-family: 'HelveticaSky'; src: url('./Helvetica Neue W23 for SKY Reg.ttf') format('truetype'); font-weight: normal; }
         @font-face { font-family: 'HelveticaSky'; src: url('./Helvetica Neue W23 for SKY bold.ttf') format('truetype'); font-weight: bold; }
 
@@ -20,9 +20,8 @@
         .card h3 { margin: 10px 0; color: #1e3a8a; }
         .badge { display: inline-block; background: #dbeafe; color: #1e40af; padding: 5px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; }
 
-        .cloud-bar { display: flex; justify-content: center; gap: 10px; background: #fffbeb; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #fef3c7; }
+        .cloud-bar { display: flex; justify-content: center; gap: 10px; background: #f8fafc; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
         .btn-action { padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; border: none; transition: 0.2s; font-family: inherit; }
-        .btn-tele { background: #0088cc; color: white; }
         .btn-print { background: #10b981; color: white; }
 
         .hidden { display: none !important; }
@@ -36,7 +35,6 @@
         .grade-input { width: 100%; height: 100%; border: none; text-align: center; font-weight: bold; background: transparent; outline: none; font-size: 14px; color: #000; padding: 4px 0;}
         td:focus-within { outline: 2px solid #3b82f6; outline-offset: -2px; }
 
-        /* لوحة الألوان المحدثة */
         .color-palette { display: flex; gap: 6px; align-items: center; background: #f1f5f9; padding: 5px 15px; border-radius: 8px; border: 1px solid #cbd5e1; flex-wrap: wrap;}
         .color-btn { width: 26px; height: 26px; border: 1px solid #94a3b8; border-radius: 6px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
         .color-btn:hover { transform: scale(1.15); border-color: #000; z-index: 10; }
@@ -60,6 +58,11 @@
         .file-badge { background: #d1fae5; color: #065f46; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
         .btn-add-task { background: #3b82f6; color: #fff; border: none; width: 100%; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
 
+        /* حالة المزامنة */
+        #sync-status { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: bold; color: #64748b; }
+        .syncing { color: #f59e0b !important; }
+        .synced { color: #059669 !important; }
+
         @media print {
             body { background: #fff; padding: 0; }
             .container { box-shadow: none; max-width: 100%; padding: 0; border: none;}
@@ -67,7 +70,7 @@
             thead { display: table-header-group !important; }
             tr { page-break-inside: avoid; }
             td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .grade-input { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .grade-input { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000 !important;}
         }
     </style>
 </head>
@@ -77,16 +80,14 @@
     <div id="dashboard">
         <h1 style="text-align: center; color: #1e3a8a;">نظام المتابعة والإنجاز - مجمع اللهابة</h1>
         <div class="cloud-bar">
-            <button class="btn-action btn-tele" onclick="backupToTelegram()"><i class="fab fa-telegram-plane"></i> مزامنة وحفظ سحابي</button>
-            <button class="btn-action" style="background:#4b5563; color:white;" onclick="document.getElementById('import').click()"><i class="fas fa-file-import"></i> استيراد نسخة محفوظة</button>
-            <input type="file" id="import" class="hidden" accept=".json" onchange="handleImport(event)">
+            <span id="global-sync-status"><i class="fas fa-cloud"></i> متصل بقاعدة البيانات (Supabase)</span>
         </div>
         <div class="grid" id="main-grid"></div>
     </div>
 
     <div id="table-section" class="hidden">
         <div style="display:flex; justify-content: space-between; align-items:center; flex-wrap: wrap; gap: 10px;">
-            <button class="btn-action no-print" style="background:#4b5563; color:white;" onclick="goHome()">العودة</button>
+            <button class="btn-action no-print" style="background:#4b5563; color:white;" onclick="goHome()">العودة للمرئيسية</button>
             
             <div class="color-palette no-print">
                 <span style="font-size:12px; font-weight:bold; color:#475569;">تلوين مخصص:</span>
@@ -103,8 +104,11 @@
                 <button class="color-btn" style="background:#f8fafc;" onclick="applyHighlight('transparent')" title="مسح اللون"><i class="fas fa-eraser" style="color:#64748b; font-size:12px;"></i></button>
             </div>
 
-            <h2 id="class-title" style="margin:0;"></h2>
-            <button class="btn-action btn-print no-print" onclick="window.print()">طباعة الكشف</button>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <span id="sync-status" class="no-print"><i class="fas fa-check-circle"></i> محفوظ</span>
+                <h2 id="class-title" style="margin:0;"></h2>
+                <button class="btn-action btn-print no-print" onclick="window.print()"><i class="fas fa-print"></i> طباعة</button>
+            </div>
         </div>
 
         <div class="table-wrapper">
@@ -151,9 +155,15 @@
 </div>
 
 <script>
-    // --- إعدادات المزامنة ---
-    const TELE_TOKEN = "ضع_التوكن_هنا"; 
-    const TELE_ID = "ضع_الآيدي_هنا";   
+    // ==========================================
+    // 1. إعدادات قواعد البيانات والتليجرام
+    // ==========================================
+    const SUPABASE_URL = https://yqbhxeotqbyygbntazws.supabase.co;
+    const SUPABASE_KEY = yqbhxeotqbyygbntazws;
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const TELE_TOKEN = "8609135687:AAHYkS2RzHqKEvv_yVAN97GolkiMZ13l1ys"; 
+    const TELE_ID = 528941707;   
 
     const studentsData = {
         "grade4": ["بدر ثنيان المطيري", "جمعان مطلق الصعنوني", "حمد عبدالهادي المري", "سلطان سعود الشريف", "عبدالعزيز فلاح المطيري", "عبدالعزيز محمد الدويش", "عبدالله ماجد المطيري", "عمر ضاري المطيري", "ماجد فيصل الدويش", "محمد عبدالفتاح محمد", "ناصر مزيد الراشد", "نايف هادي الراشد"],
@@ -177,12 +187,12 @@
     ];
 
     let activeKey = "";
-    
-    // متغيرات لتتبع الخلية المحددة يدوياً
-    let currentActiveInput = null;
-    let currentActiveSIdx = null;
-    let currentActiveGIdx = null;
+    let currentActiveInput = null, currentActiveSIdx = null, currentActiveGIdx = null;
+    let syncTimer = null; // موقت للحفظ السحابي الذكي
 
+    // ==========================================
+    // 2. التهيئة والاتصال بقاعدة البيانات
+    // ==========================================
     function init() {
         const grid = document.getElementById('main-grid');
         grid.innerHTML = "";
@@ -195,7 +205,7 @@
         });
     }
 
-    function openClass(key) {
+    async function openClass(key) {
         activeKey = key;
         document.getElementById('dashboard').classList.add('hidden');
         document.getElementById('table-section').classList.remove('hidden');
@@ -203,11 +213,34 @@
         document.getElementById('lbl-grd').innerText = labels[key];
         document.getElementById('lbl-sub').innerText = (key.startsWith('sec1') || key.startsWith('sec2')) ? "التقنية الرقمية" : "المهارات الرقمية";
         
+        setSyncStatus('جاري الجلب من السحابة...', 'syncing');
+
+        // جلب البيانات من Supabase
+        const { data, error } = await supabase.from('class_records').select('*').eq('class_key', key).single();
+        
+        if (data) {
+            localStorage.setItem('final_daily_' + key, JSON.stringify(data.grades_data || {}));
+            let allTasks = JSON.parse(localStorage.getItem('class_tasks_v1')) || {};
+            allTasks[key] = data.tasks_data || null;
+            localStorage.setItem('class_tasks_v1', JSON.stringify(allTasks));
+            setSyncStatus('مُحدث ومتزامن', 'synced');
+        } else {
+            setSyncStatus('بيانات محلية', 'synced'); // إذا لم يوجد سجل مسبق
+        }
+
+        buildTable();
+        renderTasks();
+    }
+
+    // ==========================================
+    // 3. بناء الجدول والألوان والانتقال بالإنتر
+    // ==========================================
+    function buildTable() {
         const tbody = document.getElementById('table-body');
         tbody.innerHTML = "";
-        const saved = JSON.parse(localStorage.getItem('final_daily_' + key)) || {};
+        const saved = JSON.parse(localStorage.getItem('final_daily_' + activeKey)) || {};
 
-        studentsData[key].forEach((name, idx) => {
+        studentsData[activeKey].forEach((name, idx) => {
             let tr = document.createElement("tr");
             let d = saved[idx] || Array(30).fill("");
             let html = `<td>${idx+1}</td><td class="student-name">${name}</td>`;
@@ -219,49 +252,31 @@
                 if (typeof cellData === 'object' && cellData !== null) {
                     val = cellData.v !== undefined ? cellData.v : "";
                     bg = cellData.bg || "transparent";
-                } else {
-                    val = cellData || ""; 
-                }
+                } else { val = cellData || ""; }
 
-                if(bg === "transparent" || bg === "") {
-                    bg = calculateAutoBgColor(val);
-                }
+                if(bg === "transparent" || bg === "") bg = calculateAutoBgColor(val);
 
-                // إضافة onkeydown لالتقاط زر الإنتر
                 html += `<td style="background-color: ${bg};"><input type="text" id="inp-${idx}-${i}" class="grade-input" value="${val}" onfocus="setActiveCell(${idx}, ${i}, this)" oninput="handleInput(${idx}, ${i}, this)" onkeydown="handleKeyDown(event, ${idx}, ${i})"></td>`;
             }
             tr.innerHTML = html;
             tbody.appendChild(tr);
         });
-
-        renderTasks();
     }
 
-    // دالة الانتقال بالإنتر للمربع الذي بالأسفل
     function handleKeyDown(event, sIdx, gIdx) {
         if (event.key === "Enter") {
-            event.preventDefault(); // منع السلوك الافتراضي
-            let nextStudentIdx = sIdx + 1;
-            let nextInput = document.getElementById(`inp-${nextStudentIdx}-${gIdx}`);
-            
-            if (nextInput) {
-                nextInput.focus();
-                nextInput.select(); // لتسهيل المسح أو التعديل
-            }
+            event.preventDefault(); 
+            let nextInput = document.getElementById(`inp-${sIdx + 1}-${gIdx}`);
+            if (nextInput) { nextInput.focus(); nextInput.select(); }
         }
     }
 
-    // دالة تحديد لون الخلفية التلقائي (أخضر أو أحمر)
     function calculateAutoBgColor(val) {
         let valStr = String(val).trim();
         if(valStr === '') return 'transparent';
-        
         let num = parseFloat(valStr);
-        if (valStr.startsWith('-') || num < 0) {
-            return '#fecaca'; // أحمر فاتح
-        } else if (num > 0 || valStr.includes('✔') || valStr === '+') {
-            return '#bbf7d0'; // أخضر فاتح
-        }
+        if (valStr.startsWith('-') || num < 0) return '#fecaca'; 
+        else if (num > 0 || valStr.includes('✔') || valStr === '+') return '#bbf7d0'; 
         return 'transparent';
     }
 
@@ -273,46 +288,68 @@
     }
 
     function setActiveCell(sIdx, gIdx, input) {
-        currentActiveInput = input;
-        currentActiveSIdx = sIdx;
-        currentActiveGIdx = gIdx;
+        currentActiveInput = input; currentActiveSIdx = sIdx; currentActiveGIdx = gIdx;
     }
 
     function applyHighlight(color) {
-        if (!currentActiveInput) {
-            alert("يرجى الضغط على أي مربع في الجدول أولاً لتحديده.");
-            return;
-        }
+        if (!currentActiveInput) { alert("حدد المربع أولاً!"); return; }
         currentActiveInput.parentElement.style.backgroundColor = color;
         saveData(currentActiveSIdx, currentActiveGIdx, currentActiveInput.value, color);
-        currentActiveInput.focus(); // إعادة التركيز بعد التلوين
+        currentActiveInput.focus();
     }
 
+    // ==========================================
+    // 4. الحفظ والمزامنة السحابية الفورية (Supabase)
+    // ==========================================
     function saveData(sIdx, gIdx, val, bg) {
         let data = JSON.parse(localStorage.getItem('final_daily_' + activeKey)) || {};
         if(!data[sIdx]) data[sIdx] = Array(30).fill("");
         
-        let current = data[sIdx][gIdx];
-        let currentBg = "transparent";
-        if (typeof current === 'object' && current !== null) {
-            currentBg = current.bg || "transparent";
-        }
+        let currentBg = (typeof data[sIdx][gIdx] === 'object' && data[sIdx][gIdx] !== null) ? (data[sIdx][gIdx].bg || "transparent") : "transparent";
+        data[sIdx][gIdx] = { v: val, bg: bg !== null ? bg : currentBg };
         
-        let newBg = bg !== null ? bg : currentBg;
-        
-        data[sIdx][gIdx] = { v: val, bg: newBg };
         localStorage.setItem('final_daily_' + activeKey, JSON.stringify(data));
+        triggerCloudSync(); // استدعاء المزامنة
+    }
+
+    // تقوم بالحفظ السحابي بعد التوقف عن الكتابة بثانيتين لتخفيف الضغط
+    function triggerCloudSync() {
+        setSyncStatus('جاري الحفظ...', 'syncing');
+        clearTimeout(syncTimer);
+        syncTimer = setTimeout(async () => {
+            const grades = JSON.parse(localStorage.getItem('final_daily_' + activeKey));
+            const allTasks = JSON.parse(localStorage.getItem('class_tasks_v1')) || {};
+            
+            const { error } = await supabase.from('class_records').upsert({ 
+                class_key: activeKey, 
+                grades_data: grades,
+                tasks_data: allTasks[activeKey] || null,
+                updated_at: new Date()
+            });
+
+            if (!error) {
+                setSyncStatus('محفوظ سحابياً <i class="fas fa-check-double"></i>', 'synced');
+            } else {
+                setSyncStatus('خطأ في الاتصال', 'syncing');
+            }
+        }, 2000);
+    }
+
+    function setSyncStatus(msg, className) {
+        const statusEl = document.getElementById('sync-status');
+        statusEl.innerHTML = msg;
+        statusEl.className = className;
     }
 
     // ==========================================
-    // إدارة المهام والإثباتات
+    // 5. إدارة المهام والإثباتات (عبر التليجرام)
     // ==========================================
     function getTasksData() {
         let allTasks = JSON.parse(localStorage.getItem('class_tasks_v1')) || {};
         if (!allTasks[activeKey]) {
             allTasks[activeKey] = {
-                homework: [ { name: "واجب 1", done: false, file: "" }, { name: "واجب 2", done: false, file: "" } ],
-                practical: [ { name: "تطبيق 1", done: false, file: "" }, { name: "تطبيق 2", done: false, file: "" } ],
+                homework: [ { name: "واجب 1", done: false, file: "" } ],
+                practical: [ { name: "تطبيق 1", done: false, file: "" } ],
                 projects: [ { name: "المشروع الأول", done: false, file: "" } ],
                 exams: [ { name: "اختبار قصير 1", done: false, file: "" } ]
             };
@@ -322,6 +359,7 @@
 
     function saveTasksData(allTasks) {
         localStorage.setItem('class_tasks_v1', JSON.stringify(allTasks));
+        triggerCloudSync();
     }
 
     function renderTasks() {
@@ -332,136 +370,62 @@
         taskCategories.forEach(cat => {
             let catDiv = document.createElement('div');
             catDiv.className = 'task-category';
-            
             let html = `<h3><span><i class="fas ${cat.icon}"></i> ${cat.title}</span> <span style="font-size:12px; color:#64748b;">${data[cat.id].length} مهام</span></h3>`;
             
             data[cat.id].forEach((task, idx) => {
                 let fileHTML = task.file ? `<div class="file-badge"><i class="fas fa-check-circle"></i> ${task.file}</div>` : '';
-                
                 html += `
                 <div class="task-item">
                     <div class="task-row-1">
                         <input type="checkbox" class="checkbox-custom" ${task.done ? 'checked' : ''} onchange="updateTask('${cat.id}', ${idx}, 'done', this.checked)">
                         <input type="text" class="task-name-input" value="${task.name}" oninput="updateTask('${cat.id}', ${idx}, 'name', this.value)" placeholder="اسم المهمة...">
-                        <button class="btn-delete" onclick="deleteTask('${cat.id}', ${idx})" title="حذف المهمة"><i class="fas fa-trash"></i></button>
+                        <button class="btn-delete" onclick="deleteTask('${cat.id}', ${idx})"><i class="fas fa-trash"></i></button>
                     </div>
                     <div class="task-row-2">
-                        <span style="color:#64748b;">تم التسليم للطلاب</span>
+                        <span style="color:#64748b;">تم التسليم</span>
                         <div style="display:flex; gap:10px; align-items:center;">
                             ${fileHTML}
-                            <button class="btn-upload" onclick="document.getElementById('file-${cat.id}-${idx}').click()">
-                                <i class="fas fa-cloud-upload-alt"></i> إرفاق إثبات
-                            </button>
+                            <button class="btn-upload" onclick="document.getElementById('file-${cat.id}-${idx}').click()"><i class="fas fa-cloud-upload-alt"></i> إرفاق إثبات</button>
                             <input type="file" id="file-${cat.id}-${idx}" class="hidden" onchange="uploadTaskProof('${cat.id}', ${idx}, this)">
                         </div>
                     </div>
                 </div>`;
             });
-
-            html += `<button class="btn-add-task" onclick="addTask('${cat.id}')"><i class="fas fa-plus"></i> إضافة مهمة جديدة</button>`;
-            catDiv.innerHTML = html;
-            grid.appendChild(catDiv);
+            html += `<button class="btn-add-task" onclick="addTask('${cat.id}')"><i class="fas fa-plus"></i> مهمة جديدة</button>`;
+            catDiv.innerHTML = html; grid.appendChild(catDiv);
         });
     }
 
-    function addTask(catId) {
-        let allTasks = getTasksData();
-        allTasks[activeKey][catId].push({ name: "مهمة جديدة", done: false, file: "" });
-        saveTasksData(allTasks);
-        renderTasks();
-    }
-
-    function deleteTask(catId, idx) {
-        if(confirm("هل أنت متأكد من حذف هذه المهمة؟")) {
-            let allTasks = getTasksData();
-            allTasks[activeKey][catId].splice(idx, 1);
-            saveTasksData(allTasks);
-            renderTasks();
-        }
-    }
-
-    function updateTask(catId, idx, field, value) {
-        let allTasks = getTasksData();
-        allTasks[activeKey][catId][idx][field] = value;
-        saveTasksData(allTasks);
-    }
+    function addTask(catId) { let d = getTasksData(); d[activeKey][catId].push({ name: "جديدة", done: false, file: "" }); saveTasksData(d); renderTasks(); }
+    function deleteTask(catId, idx) { if(confirm("حذف المهمة؟")) { let d = getTasksData(); d[activeKey][catId].splice(idx, 1); saveTasksData(d); renderTasks(); } }
+    function updateTask(catId, idx, field, value) { let d = getTasksData(); d[activeKey][catId][idx][field] = value; saveTasksData(d); }
 
     async function uploadTaskProof(catId, idx, inputElem) {
         const file = inputElem.files[0];
         if(!file) return;
-
-        if(!TELE_TOKEN || TELE_TOKEN.includes("ضع_التوكن")) {
-            alert("يرجى إعداد التوكن والآيدي الخاص بالتليجرام في الكود ليتم حفظ الملفات سحابياً.");
-            return;
-        }
+        if(!TELE_TOKEN || TELE_TOKEN.includes("ضع_التوكن")) { alert("يرجى إعداد التوكن في الكود."); return; }
 
         inputElem.disabled = true;
-        let allTasks = getTasksData();
-        let taskName = allTasks[activeKey][catId][idx].name;
+        let d = getTasksData();
+        let taskName = d[activeKey][catId][idx].name;
         
         const formData = new FormData();
         formData.append("chat_id", TELE_ID);
         formData.append("document", file);
-        formData.append("caption", `📚 إثبات إنجاز وتسليم\nالفصل: ${labels[activeKey]}\nالمهمة: ${taskName}\nالمعلم: سعود الشريف`);
+        formData.append("caption", `📚 إثبات إنجاز\nالفصل: ${labels[activeKey]}\nالمهمة: ${taskName}\nالمعلم: سعود الشريف`);
 
         let btn = inputElem.previousElementSibling;
         let originalText = btn.innerHTML;
-        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري الرفع...`;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> يرفع...`;
 
         try {
             const response = await fetch(`https://api.telegram.org/bot${TELE_TOKEN}/sendDocument`, { method: "POST", body: formData });
-            if(response.ok) {
-                allTasks[activeKey][catId][idx].file = file.name;
-                saveTasksData(allTasks);
-                renderTasks();
-            } else {
-                alert("حدث خطأ أثناء الرفع للتليجرام.");
-            }
-        } catch(e) {
-            alert("فشل الاتصال بالإنترنت.");
-        } finally {
-            btn.innerHTML = originalText;
-            inputElem.disabled = false;
-        }
+            if(response.ok) { d[activeKey][catId][idx].file = file.name; saveTasksData(d); renderTasks(); } 
+            else { alert("خطأ في الرفع للتليجرام."); }
+        } catch(e) { alert("فشل الاتصال."); } finally { btn.innerHTML = originalText; inputElem.disabled = false; }
     }
 
-    // ==========================================
-    // المزامنة السحابية مع تليجرام
-    // ==========================================
-
-    async function backupToTelegram() {
-        const all = {};
-        for(let i=0; i<localStorage.length; i++) {
-            let k = localStorage.key(i);
-            if(k.startsWith('final_daily_') || k.startsWith('class_tasks_')) all[k] = localStorage.getItem(k);
-        }
-        const blob = new Blob([JSON.stringify(all)], {type: "application/json"});
-        const formData = new FormData();
-        formData.append("chat_id", TELE_ID);
-        formData.append("document", blob, `متابعة_سعود_الشريف_${new Date().toLocaleDateString()}.json`);
-        
-        try {
-            await fetch(`https://api.telegram.org/bot${TELE_TOKEN}/sendDocument`, { method: "POST", body: formData });
-            alert("تم إرسال النسخة الاحتياطية لتليجرام بنجاح! ✅");
-        } catch(e) { alert("فشل الإرسال، تحقق من الاتصال."); }
-    }
-
-    function handleImport(e) {
-        let fr = new FileReader();
-        fr.onload = (ev) => {
-            const data = JSON.parse(ev.target.result);
-            Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
-            alert("تم استعادة البيانات بنجاح!"); location.reload();
-        };
-        fr.readAsText(e.target.files[0]);
-    }
-
-    function goHome() { 
-        document.getElementById('dashboard').classList.remove('hidden'); 
-        document.getElementById('table-section').classList.add('hidden');
-        currentActiveInput = null;
-    }
-    
+    function goHome() { document.getElementById('dashboard').classList.remove('hidden'); document.getElementById('table-section').classList.add('hidden'); currentActiveInput = null; }
     init();
 </script>
 </body>
