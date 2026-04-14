@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام المتابعة والإنجاز - مجمع اللهابة</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* تعريف الخطوط */
+        @font-face { font-family: 'HelveticaSky'; src: url('./Helvetica Neue W23 for SKY Reg.ttf') format('truetype'); font-weight: normal; }
+        @font-face { font-family: 'HelveticaSky'; src: url('./Helvetica Neue W23 for SKY bold.ttf') format('truetype'); font-weight: bold; }
+
+        body { font-family: 'HelveticaSky', Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #111; }
+        .container { max-width: 100%; margin: 0 auto; background: #fff; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+        .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; text-align: center; cursor: pointer; transition: 0.3s; border-bottom: 4px solid #3b82f6; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .card h3 { margin: 10px 0; color: #1e3a8a; }
+        .badge { display: inline-block; background: #dbeafe; color: #1e40af; padding: 5px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; }
+
+        .cloud-bar { display: flex; justify-content: center; gap: 10px; background: #fffbeb; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #fef3c7; }
+        .btn-action { padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; border: none; transition: 0.2s; font-family: inherit; }
+        .btn-tele { background: #0088cc; color: white; }
+        .btn-print { background: #10b981; color: white; }
+
+        .hidden { display: none !important; }
+        .table-wrapper { overflow-x: auto; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; border: 2px solid #000; }
+        th, td { border: 1px solid #000; text-align: center; padding: 4px; font-size: 11px; transition: background-color 0.2s; }
+        .bg-gray { background: #e2e8f0; font-weight: bold; }
+        .bg-dark { background: #1e293b; color: #fff; }
+        .student-name { text-align: right !important; padding-right: 10px !important; font-weight: bold; min-width: 160px; font-size: 13px; }
+        
+        .grade-input { width: 100%; height: 100%; border: none; text-align: center; font-weight: bold; background: transparent; outline: none; font-size: 14px; color: #000; padding: 4px 0;}
+        td:focus-within { outline: 2px solid #3b82f6; outline-offset: -2px; }
+
+        /* لوحة الألوان المحدثة */
+        .color-palette { display: flex; gap: 6px; align-items: center; background: #f1f5f9; padding: 5px 15px; border-radius: 8px; border: 1px solid #cbd5e1; flex-wrap: wrap;}
+        .color-btn { width: 26px; height: 26px; border: 1px solid #94a3b8; border-radius: 6px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
+        .color-btn:hover { transform: scale(1.15); border-color: #000; z-index: 10; }
+
+        .tasks-manager { margin-top: 40px; padding-top: 20px; border-top: 3px dashed #cbd5e1; }
+        .tasks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 15px; }
+        .task-category { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; }
+        .task-category h3 { margin-top: 0; color: #0f172a; font-size: 16px; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; display: flex; justify-content: space-between; }
+        
+        .task-item { background: #fff; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .task-row-1 { display: flex; align-items: center; gap: 10px; }
+        .task-row-2 { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+        
+        .task-name-input { flex-grow: 1; border: 1px solid #e2e8f0; padding: 5px 10px; border-radius: 4px; font-family: inherit; font-size: 13px; font-weight: bold; }
+        .checkbox-custom { width: 18px; height: 18px; cursor: pointer; }
+        
+        .btn-upload { background: #f59e0b; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+        .btn-upload:hover { background: #d97706; }
+        .btn-delete { background: #ef4444; color: #fff; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; }
+        
+        .file-badge { background: #d1fae5; color: #065f46; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+        .btn-add-task { background: #3b82f6; color: #fff; border: none; width: 100%; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .container { box-shadow: none; max-width: 100%; padding: 0; border: none;}
+            .cloud-bar, #dashboard, .no-print, .tasks-manager { display: none !important; }
+            thead { display: table-header-group !important; }
+            tr { page-break-inside: avoid; }
+            td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .grade-input { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="dashboard">
+        <h1 style="text-align: center; color: #1e3a8a;">نظام المتابعة والإنجاز - مجمع اللهابة</h1>
+        <div class="cloud-bar">
+            <button class="btn-action btn-tele" onclick="backupToTelegram()"><i class="fab fa-telegram-plane"></i> مزامنة وحفظ سحابي</button>
+            <button class="btn-action" style="background:#4b5563; color:white;" onclick="document.getElementById('import').click()"><i class="fas fa-file-import"></i> استيراد نسخة محفوظة</button>
+            <input type="file" id="import" class="hidden" accept=".json" onchange="handleImport(event)">
+        </div>
+        <div class="grid" id="main-grid"></div>
+    </div>
+
+    <div id="table-section" class="hidden">
+        <div style="display:flex; justify-content: space-between; align-items:center; flex-wrap: wrap; gap: 10px;">
+            <button class="btn-action no-print" style="background:#4b5563; color:white;" onclick="goHome()">العودة</button>
+            
+            <div class="color-palette no-print">
+                <span style="font-size:12px; font-weight:bold; color:#475569;">تلوين مخصص:</span>
+                <button class="color-btn" style="background:#bbf7d0;" onclick="applyHighlight('#bbf7d0')" title="أخضر فاتح"></button>
+                <button class="color-btn" style="background:#4ade80;" onclick="applyHighlight('#4ade80')" title="أخضر غامق"></button>
+                <button class="color-btn" style="background:#fecaca;" onclick="applyHighlight('#fecaca')" title="أحمر فاتح"></button>
+                <button class="color-btn" style="background:#f87171;" onclick="applyHighlight('#f87171')" title="أحمر غامق"></button>
+                <button class="color-btn" style="background:#fef08a;" onclick="applyHighlight('#fef08a')" title="أصفر فاتح"></button>
+                <button class="color-btn" style="background:#fde047;" onclick="applyHighlight('#fde047')" title="أصفر غامق"></button>
+                <button class="color-btn" style="background:#bfdbfe;" onclick="applyHighlight('#bfdbfe')" title="أزرق فاتح"></button>
+                <button class="color-btn" style="background:#60a5fa;" onclick="applyHighlight('#60a5fa')" title="أزرق غامق"></button>
+                <button class="color-btn" style="background:#fed7aa;" onclick="applyHighlight('#fed7aa')" title="برتقالي"></button>
+                <button class="color-btn" style="background:#e9d5ff;" onclick="applyHighlight('#e9d5ff')" title="بنفسجي"></button>
+                <button class="color-btn" style="background:#f8fafc;" onclick="applyHighlight('transparent')" title="مسح اللون"><i class="fas fa-eraser" style="color:#64748b; font-size:12px;"></i></button>
+            </div>
+
+            <h2 id="class-title" style="margin:0;"></h2>
+            <button class="btn-action btn-print no-print" onclick="window.print()">طباعة الكشف</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="monitoring-table">
+                <thead>
+                    <tr>
+                        <th colspan="32" style="border:none; padding-bottom:15px; background:#fff;">
+                            <div style="display:flex; justify-content:space-between; align-items:start; font-weight:bold; font-size:13px; line-height:1.6;">
+                                <div style="text-align:right;">المملكة العربية السعودية<br>وزارة التعليم<br>الإدارة العامة للتعليم بالمنطقة الشرقية<br>مجمع اللهابة التعليمي</div>
+                                <div style="text-align:center;"><img src="https://henka.sa/wp-content/uploads/2025/06/MOELogo.svg.png" width="130"><br><span style="font-size:20px;">كشف المتابعة اليومية</span></div>
+                                <div style="text-align:right;">مقرر: <span id="lbl-sub">...</span><br>الصف: <span id="lbl-grd">...</span><br>الفصل الدراسي الأول ١٤٤٧ هـ</div>
+                            </div>
+                            <hr style="border:0.5px solid #000; margin-top:10px;">
+                        </th>
+                    </tr>
+                    <tr class="bg-gray">
+                        <th rowspan="3">م</th><th rowspan="3">اسم الطالب</th>
+                        <th colspan="19">المهام الأدائية والمشاركة والتفاعل (40)</th>
+                        <th colspan="9">تقويمات تحريرية وتطبيقات عملية (60)</th>
+                        <th rowspan="3" class="bg-dark">المجموع<br>الكلي</th>
+                    </tr>
+                    <tr class="bg-gray">
+                        <th colspan="6">المشاركة (10)</th><th colspan="5">نشاطات صفية (10)</th><th colspan="5">الواجبات (10)</th><th colspan="3">المشروع (10)</th>
+                        <th colspan="3">اختبارات قصيرة (20)</th><th colspan="5">عملي (40)</th><th rowspan="2" class="bg-gray">60</th>
+                    </tr>
+                    <tr class="bg-gray">
+                        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th class="bg-dark">م</th>
+                        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+                        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+                        <th>1</th><th>2</th><th class="bg-dark">م</th>
+                        <th>1</th><th>2</th><th class="bg-dark">م</th>
+                        <th>1</th><th>2</th><th>3</th><th>4</th><th class="bg-dark">م</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+
+        <div class="tasks-manager no-print">
+            <h2 style="text-align: center; color: #1e3a8a;"><i class="fas fa-tasks"></i> سجل إنجاز المعلم (إدارة وتسليم المهام)</h2>
+            <div class="tasks-grid" id="tasks-grid"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- إعدادات المزامنة ---
+    const TELE_TOKEN = "ضع_التوكن_هنا"; 
+    const TELE_ID = "ضع_الآيدي_هنا";   
+
+    const studentsData = {
+        "grade4": ["بدر ثنيان المطيري", "جمعان مطلق الصعنوني", "حمد عبدالهادي المري", "سلطان سعود الشريف", "عبدالعزيز فلاح المطيري", "عبدالعزيز محمد الدويش", "عبدالله ماجد المطيري", "عمر ضاري المطيري", "ماجد فيصل الدويش", "محمد عبدالفتاح محمد", "ناصر مزيد الراشد", "نايف هادي الراشد"],
+        "grade5": ["بتال حسن المطيري", "بدر نفجان المطيري", "تركي غازي المطيري", "تركي محمد المطيري", "ريان مشاري المطيري", "سعود سويدان الراشد", "سلطان سامي العنزي", "عبدالمحسن مطلق المطيري", "عبدالمحسن هزاع المطيري", "عبدالله بجاد المطيري", "عبدالله فهد المطيري", "عبدالله عوض الصعنوني", "عبدالله محمد الدويش", "ماجد نايف الدويش", "ماجد قويعان الراشد", "محمد حزام المطيري", "محمد حمدان المطيري", "محمد غنيم", "محمد قويعان", "مشعل محمد المطيري"],
+        "grade6": ["بدر عبدالله المطيري", "بدر هزاع الدويش", "سعود خالد الراشد", "عبدالله فهد المطيري", "ماجد مشاري المطيري", "محمد عايش", "مذكر صالح المطيري", "نايف سعود المطيري", "نايف ناصر المطيري"],
+        "int1": ["بندر غازي الرخيمي", "تركي مشعل المطيري", "دغش عبيد عليثه الدوسري", "عبدالله طلب الراشد", "عبدالله مرزوق", "عبدالله سعود المطيري", "فزاع عبدالله الراشد", "فهيد عبدالله الصعنوني", "ماجد صلاح الرخيمي", "محمد بدر الدويش", "محمد عقاب الراشد", "محمد فهد صنيتان", "نافع قويعان الراشد", "نايف محمد الرخيمي", "نايف جمعه", "يزيد رامز"],
+        "int2": ["بدر عبدالله الرخيمي", "خالد مزيد المطيري", "خالد مطلق الصعنوني", "سلمان سويدان الراشد", "عبدالرحمن عوض الصعنوني", "عبدالرحمن غالي الراشد", "عبدالله قويعان الراشد", "علي بدر قاعد المطيري", "فيصل عيد المطيري", "محمد سعد الصعنوني", "محمد فلاح الصعنوني", "نداء طلب الراشد"],
+        "int3": ["جاسر رامز مصطفى", "خميس فهاد الراشد", "سالم مهمل الراشد", "سعود مخلف الراشد", "سعود مشعل الرخيمي", "عبدالرحمن جاسر الرخيمي", "عبدالله عقاب الراشد", "عبدالله غنيم الراشد", "عبدالله محمد الرخيمي", "عقاب مطلق العتيبي", "ماجد نواف الدويش", "محمد غازي الرخيمي", "مرعي مخلف الراشد", "مشعل كتاب العتيبي", "نواف عبدالله الخويطري", "نواف ناصر المطيري", "يزيد بجاد المطيري"],
+        "sec1": ["بتال ثاني المطيري", "بدر أحمد فهاد", "بندر محمد الدوسري", "تركي جمعه محمد الشيخ", "تركي سعود الصعنوني", "خالد منصور المطيري", "سعد صاهود الدوسري", "سعود محمد الرخيمي", "سلمان سامي العنزي", "عبدالعزيز بدر الدويش", "عبدالعزيز مشعل الرخيمي", "عبدالله نايف الدويش", "محمد حسن المطيري", "محمد خالد المطيري", "محمد ضاري المطيري", "محمد ناهس المطيري", "محمد نفجان المطيري", "نايف بدر قاعد الرخيمي", "نايف بدر الدويش", "نايف سلمان الراشد", "هايف محمد الرخيمي", "يوسف صالح الرخيمي"],
+        "sec2": ["احمد حزام المطيري", "خالد صلاح المطيري", "سعود سلطان الدويش", "سعود مفرج المطيري", "عبدالاله قاسم الماجدي", "عبدالله حمدان المطيري", "عبدالله منصور المطيري", "ماجد بدر الدويش", "نايف عبدالله المطيري", "نايف طلال المطيري"],
+        "sec3": ["أحمد عبدالفتاح محمد عبدالا لة", "تركي طلال سعيد شمروخ المطيري", "جديع بن عبدالله بن جديع الراشد", "خالد بن غازي بن هايف الرخيمي المطيري", "خالد بن محماس بن فهد الرخيمي المطيري", "زبن بن حمدان بن زبن الرخيمي المطيري", "عبدالرحمن بن موسي بن هثال سلمي العنزي", "عبدالله بن محمد بن عبيد حبلاني العنزي", "عبدالله شبيب غازى المطيرى", "فهد بن حزام بن فهيد الصعنوني المطيري", "ماجد محسن محمد نفجان المطيري", "محمد بن عبدالله بن عطاالله الرخيمي المطيري", "نايف ابن سعود ابن عبدالعزيز الدويش", "نواف بن سلمان بن طويحين الراشد", "هزاع بن غنيم بن عبدالمحسن الراشد", "مطلق محمد الصعنوني", "عبيد ناهس المطيري"]
+    };
+
+    const labels = { "grade4": "الرابع الابتدائي", "grade5": "الخامس الابتدائي", "grade6": "السادس الابتدائي", "int1": "الأول المتوسط", "int2": "الثاني المتوسط", "int3": "الثالث المتوسط", "sec1": "الأول الثانوي", "sec2": "الثاني الثانوي", "sec3": "الثالث الثانوي" };
+
+    const taskCategories = [
+        { id: 'homework', title: 'الواجبات', icon: 'fa-book-open' },
+        { id: 'practical', title: 'التطبيقات العملية', icon: 'fa-laptop-code' },
+        { id: 'projects', title: 'المشاريع', icon: 'fa-project-diagram' },
+        { id: 'exams', title: 'الاختبارات القصيرة', icon: 'fa-file-alt' }
+    ];
+
+    let activeKey = "";
+    
+    // متغيرات لتتبع الخلية المحددة يدوياً
+    let currentActiveInput = null;
+    let currentActiveSIdx = null;
+    let currentActiveGIdx = null;
+
+    function init() {
+        const grid = document.getElementById('main-grid');
+        grid.innerHTML = "";
+        Object.keys(studentsData).forEach(key => {
+            const card = document.createElement('div');
+            card.className = "card";
+            card.onclick = () => openClass(key);
+            card.innerHTML = `<h3>${labels[key]}</h3><span class="badge">${studentsData[key].length} طالباً</span>`;
+            grid.appendChild(card);
+        });
+    }
+
+    function openClass(key) {
+        activeKey = key;
+        document.getElementById('dashboard').classList.add('hidden');
+        document.getElementById('table-section').classList.remove('hidden');
+        document.getElementById('class-title').innerText = labels[key];
+        document.getElementById('lbl-grd').innerText = labels[key];
+        document.getElementById('lbl-sub').innerText = (key.startsWith('sec1') || key.startsWith('sec2')) ? "التقنية الرقمية" : "المهارات الرقمية";
+        
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = "";
+        const saved = JSON.parse(localStorage.getItem('final_daily_' + key)) || {};
+
+        studentsData[key].forEach((name, idx) => {
+            let tr = document.createElement("tr");
+            let d = saved[idx] || Array(30).fill("");
+            let html = `<td>${idx+1}</td><td class="student-name">${name}</td>`;
+            
+            for(let i=0; i<30; i++) {
+                let cellData = d[i];
+                let val = "", bg = "transparent";
+                
+                if (typeof cellData === 'object' && cellData !== null) {
+                    val = cellData.v !== undefined ? cellData.v : "";
+                    bg = cellData.bg || "transparent";
+                } else {
+                    val = cellData || ""; 
+                }
+
+                if(bg === "transparent" || bg === "") {
+                    bg = calculateAutoBgColor(val);
+                }
+
+                // إضافة onkeydown لالتقاط زر الإنتر
+                html += `<td style="background-color: ${bg};"><input type="text" id="inp-${idx}-${i}" class="grade-input" value="${val}" onfocus="setActiveCell(${idx}, ${i}, this)" oninput="handleInput(${idx}, ${i}, this)" onkeydown="handleKeyDown(event, ${idx}, ${i})"></td>`;
+            }
+            tr.innerHTML = html;
+            tbody.appendChild(tr);
+        });
+
+        renderTasks();
+    }
+
+    // دالة الانتقال بالإنتر للمربع الذي بالأسفل
+    function handleKeyDown(event, sIdx, gIdx) {
+        if (event.key === "Enter") {
+            event.preventDefault(); // منع السلوك الافتراضي
+            let nextStudentIdx = sIdx + 1;
+            let nextInput = document.getElementById(`inp-${nextStudentIdx}-${gIdx}`);
+            
+            if (nextInput) {
+                nextInput.focus();
+                nextInput.select(); // لتسهيل المسح أو التعديل
+            }
+        }
+    }
+
+    // دالة تحديد لون الخلفية التلقائي (أخضر أو أحمر)
+    function calculateAutoBgColor(val) {
+        let valStr = String(val).trim();
+        if(valStr === '') return 'transparent';
+        
+        let num = parseFloat(valStr);
+        if (valStr.startsWith('-') || num < 0) {
+            return '#fecaca'; // أحمر فاتح
+        } else if (num > 0 || valStr.includes('✔') || valStr === '+') {
+            return '#bbf7d0'; // أخضر فاتح
+        }
+        return 'transparent';
+    }
+
+    function handleInput(sIdx, gIdx, inputElem) {
+        let val = inputElem.value;
+        let autoBg = calculateAutoBgColor(val);
+        inputElem.parentElement.style.backgroundColor = autoBg;
+        saveData(sIdx, gIdx, val, autoBg);
+    }
+
+    function setActiveCell(sIdx, gIdx, input) {
+        currentActiveInput = input;
+        currentActiveSIdx = sIdx;
+        currentActiveGIdx = gIdx;
+    }
+
+    function applyHighlight(color) {
+        if (!currentActiveInput) {
+            alert("يرجى الضغط على أي مربع في الجدول أولاً لتحديده.");
+            return;
+        }
+        currentActiveInput.parentElement.style.backgroundColor = color;
+        saveData(currentActiveSIdx, currentActiveGIdx, currentActiveInput.value, color);
+        currentActiveInput.focus(); // إعادة التركيز بعد التلوين
+    }
+
+    function saveData(sIdx, gIdx, val, bg) {
+        let data = JSON.parse(localStorage.getItem('final_daily_' + activeKey)) || {};
+        if(!data[sIdx]) data[sIdx] = Array(30).fill("");
+        
+        let current = data[sIdx][gIdx];
+        let currentBg = "transparent";
+        if (typeof current === 'object' && current !== null) {
+            currentBg = current.bg || "transparent";
+        }
+        
+        let newBg = bg !== null ? bg : currentBg;
+        
+        data[sIdx][gIdx] = { v: val, bg: newBg };
+        localStorage.setItem('final_daily_' + activeKey, JSON.stringify(data));
+    }
+
+    // ==========================================
+    // إدارة المهام والإثباتات
+    // ==========================================
+    function getTasksData() {
+        let allTasks = JSON.parse(localStorage.getItem('class_tasks_v1')) || {};
+        if (!allTasks[activeKey]) {
+            allTasks[activeKey] = {
+                homework: [ { name: "واجب 1", done: false, file: "" }, { name: "واجب 2", done: false, file: "" } ],
+                practical: [ { name: "تطبيق 1", done: false, file: "" }, { name: "تطبيق 2", done: false, file: "" } ],
+                projects: [ { name: "المشروع الأول", done: false, file: "" } ],
+                exams: [ { name: "اختبار قصير 1", done: false, file: "" } ]
+            };
+        }
+        return allTasks;
+    }
+
+    function saveTasksData(allTasks) {
+        localStorage.setItem('class_tasks_v1', JSON.stringify(allTasks));
+    }
+
+    function renderTasks() {
+        const grid = document.getElementById('tasks-grid');
+        grid.innerHTML = "";
+        let data = getTasksData()[activeKey];
+
+        taskCategories.forEach(cat => {
+            let catDiv = document.createElement('div');
+            catDiv.className = 'task-category';
+            
+            let html = `<h3><span><i class="fas ${cat.icon}"></i> ${cat.title}</span> <span style="font-size:12px; color:#64748b;">${data[cat.id].length} مهام</span></h3>`;
+            
+            data[cat.id].forEach((task, idx) => {
+                let fileHTML = task.file ? `<div class="file-badge"><i class="fas fa-check-circle"></i> ${task.file}</div>` : '';
+                
+                html += `
+                <div class="task-item">
+                    <div class="task-row-1">
+                        <input type="checkbox" class="checkbox-custom" ${task.done ? 'checked' : ''} onchange="updateTask('${cat.id}', ${idx}, 'done', this.checked)">
+                        <input type="text" class="task-name-input" value="${task.name}" oninput="updateTask('${cat.id}', ${idx}, 'name', this.value)" placeholder="اسم المهمة...">
+                        <button class="btn-delete" onclick="deleteTask('${cat.id}', ${idx})" title="حذف المهمة"><i class="fas fa-trash"></i></button>
+                    </div>
+                    <div class="task-row-2">
+                        <span style="color:#64748b;">تم التسليم للطلاب</span>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            ${fileHTML}
+                            <button class="btn-upload" onclick="document.getElementById('file-${cat.id}-${idx}').click()">
+                                <i class="fas fa-cloud-upload-alt"></i> إرفاق إثبات
+                            </button>
+                            <input type="file" id="file-${cat.id}-${idx}" class="hidden" onchange="uploadTaskProof('${cat.id}', ${idx}, this)">
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            html += `<button class="btn-add-task" onclick="addTask('${cat.id}')"><i class="fas fa-plus"></i> إضافة مهمة جديدة</button>`;
+            catDiv.innerHTML = html;
+            grid.appendChild(catDiv);
+        });
+    }
+
+    function addTask(catId) {
+        let allTasks = getTasksData();
+        allTasks[activeKey][catId].push({ name: "مهمة جديدة", done: false, file: "" });
+        saveTasksData(allTasks);
+        renderTasks();
+    }
+
+    function deleteTask(catId, idx) {
+        if(confirm("هل أنت متأكد من حذف هذه المهمة؟")) {
+            let allTasks = getTasksData();
+            allTasks[activeKey][catId].splice(idx, 1);
+            saveTasksData(allTasks);
+            renderTasks();
+        }
+    }
+
+    function updateTask(catId, idx, field, value) {
+        let allTasks = getTasksData();
+        allTasks[activeKey][catId][idx][field] = value;
+        saveTasksData(allTasks);
+    }
+
+    async function uploadTaskProof(catId, idx, inputElem) {
+        const file = inputElem.files[0];
+        if(!file) return;
+
+        if(!TELE_TOKEN || TELE_TOKEN.includes("ضع_التوكن")) {
+            alert("يرجى إعداد التوكن والآيدي الخاص بالتليجرام في الكود ليتم حفظ الملفات سحابياً.");
+            return;
+        }
+
+        inputElem.disabled = true;
+        let allTasks = getTasksData();
+        let taskName = allTasks[activeKey][catId][idx].name;
+        
+        const formData = new FormData();
+        formData.append("chat_id", TELE_ID);
+        formData.append("document", file);
+        formData.append("caption", `📚 إثبات إنجاز وتسليم\nالفصل: ${labels[activeKey]}\nالمهمة: ${taskName}\nالمعلم: سعود الشريف`);
+
+        let btn = inputElem.previousElementSibling;
+        let originalText = btn.innerHTML;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري الرفع...`;
+
+        try {
+            const response = await fetch(`https://api.telegram.org/bot${TELE_TOKEN}/sendDocument`, { method: "POST", body: formData });
+            if(response.ok) {
+                allTasks[activeKey][catId][idx].file = file.name;
+                saveTasksData(allTasks);
+                renderTasks();
+            } else {
+                alert("حدث خطأ أثناء الرفع للتليجرام.");
+            }
+        } catch(e) {
+            alert("فشل الاتصال بالإنترنت.");
+        } finally {
+            btn.innerHTML = originalText;
+            inputElem.disabled = false;
+        }
+    }
+
+    // ==========================================
+    // المزامنة السحابية مع تليجرام
+    // ==========================================
+
+    async function backupToTelegram() {
+        const all = {};
+        for(let i=0; i<localStorage.length; i++) {
+            let k = localStorage.key(i);
+            if(k.startsWith('final_daily_') || k.startsWith('class_tasks_')) all[k] = localStorage.getItem(k);
+        }
+        const blob = new Blob([JSON.stringify(all)], {type: "application/json"});
+        const formData = new FormData();
+        formData.append("chat_id", TELE_ID);
+        formData.append("document", blob, `متابعة_سعود_الشريف_${new Date().toLocaleDateString()}.json`);
+        
+        try {
+            await fetch(`https://api.telegram.org/bot${TELE_TOKEN}/sendDocument`, { method: "POST", body: formData });
+            alert("تم إرسال النسخة الاحتياطية لتليجرام بنجاح! ✅");
+        } catch(e) { alert("فشل الإرسال، تحقق من الاتصال."); }
+    }
+
+    function handleImport(e) {
+        let fr = new FileReader();
+        fr.onload = (ev) => {
+            const data = JSON.parse(ev.target.result);
+            Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
+            alert("تم استعادة البيانات بنجاح!"); location.reload();
+        };
+        fr.readAsText(e.target.files[0]);
+    }
+
+    function goHome() { 
+        document.getElementById('dashboard').classList.remove('hidden'); 
+        document.getElementById('table-section').classList.add('hidden');
+        currentActiveInput = null;
+    }
+    
+    init();
+</script>
+</body>
+</html>
