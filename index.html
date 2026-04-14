@@ -14,6 +14,7 @@
         body { font-family: 'HelveticaSky', Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #111; }
         .container { max-width: 100%; margin: 0 auto; background: #fff; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         
+        /* شاشة تسجيل الدخول الذكية */
         #login-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(240, 242, 245, 0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .login-box { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); text-align: center; max-width: 400px; width: 90%; border-top: 5px solid #1e3a8a; }
         .btn-login { display: block; width: 100%; padding: 14px; margin: 15px 0; font-size: 16px; border-radius: 10px; cursor: pointer; border: none; font-weight: bold; transition: 0.3s; font-family: inherit; }
@@ -22,6 +23,7 @@
         .btn-guest { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
         .btn-guest:hover { background: #e2e8f0; transform: translateY(-2px); }
         
+        /* حقل الباسوورد المدمج */
         .password-input { width: 100%; padding: 12px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 16px; text-align: center; font-family: inherit; margin-bottom: 10px; box-sizing: border-box; }
         .password-input:focus { outline: none; border-color: #3b82f6; }
 
@@ -39,6 +41,7 @@
 
         .hidden { display: none !important; }
         
+        /* إخفاء العناصر الحساسة في وضع الزائر */
         body.guest-mode .no-guest { display: none !important; }
         body.guest-mode .grade-input { pointer-events: none; } 
 
@@ -204,14 +207,17 @@
     const TELE_TOKEN = "8609135687:AAHYkS2RzHqKEvv_yVAN97GolkiMZ13l1ys"; 
     const TELE_ID = "528941707";    
     
-    // كلمة المرور الافتراضية
+    // كلمة المرور الخاصة بك كمعلم
     const ADMIN_PASSWORD = "552255"; 
+    
+    // المدة المسموحة لترك الجهاز قبل تسجيل الخروج التلقائي (بالملي ثانية) - حالياً 10 دقائق
     const TIMEOUT_DURATION = 10 * 60 * 1000; 
 
     let isGuest = false;
     let supabaseApp = null;
     let isCloudEnabled = false;
     let inactivityTimer = null;
+    let syncTimer = null; // ⚠️ هذا هو المتغير الذي كان مفقوداً وسبب المشكلة ⚠️
     
     try {
         if(!SUPABASE_URL.includes("ضع_") && !SUPABASE_KEY.includes("ضع_")) {
@@ -219,7 +225,7 @@
             isCloudEnabled = true;
             document.getElementById('global-sync-status').innerHTML = '<i class="fas fa-cloud"></i> متصل بقاعدة بيانات Supabase بنجاح';
         } else {
-            document.getElementById('global-sync-status').innerHTML = '<i class="fas fa-exclamation-triangle"></i> يعمل النظام محلياً (الرجاء وضع مفاتيح Supabase)';
+            document.getElementById('global-sync-status').innerHTML = '<i class="fas fa-exclamation-triangle"></i> يعمل النظام محلياً (الرجاء وضع مفاتيح Supabase في الكود)';
             document.getElementById('global-sync-status').className = 'error-sync';
         }
     } catch(e) { console.error("Supabase initialization error."); }
@@ -270,7 +276,7 @@
                 isGuest = false;
                 document.body.classList.remove('guest-mode');
                 document.getElementById('guest-indicator').classList.add('hidden');
-                startAutoLogout(); 
+                startAutoLogout(); // بدء عداد الحماية للمعلم فقط
                 startGame();
             } else {
                 alert("عذراً، كلمة المرور غير صحيحة!");
@@ -285,6 +291,7 @@
         }
     }
 
+    // السماح بالدخول عند ضغط انتر في حقل الباسوورد
     document.getElementById('teacher-password').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') handleLogin('teacher');
     });
@@ -295,7 +302,11 @@
         init();
     }
 
+    // ==========================================
+    // نظام الإغلاق التلقائي (Session Timeout)
+    // ==========================================
     function startAutoLogout() {
+        // يتم إعادة ضبط العداد عند أي حركة (ماوس، كيبورد، ضغط)
         window.addEventListener('mousemove', resetLogoutTimer);
         window.addEventListener('keypress', resetLogoutTimer);
         window.addEventListener('click', resetLogoutTimer);
@@ -308,7 +319,10 @@
         inactivityTimer = setTimeout(forceLogout, TIMEOUT_DURATION);
     }
 
-    function forceLogout() { location.reload(); }
+    function forceLogout() {
+        // إعادة تحميل الصفحة بالكامل للخروج ومسح الذاكرة المؤقتة للواجهة
+        location.reload(); 
+    }
 
     // ==========================================
     // تهيئة النظام والمزامنة المحسنة (مع تجاوز 406)
