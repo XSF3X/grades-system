@@ -58,10 +58,10 @@
         .file-badge { background: #d1fae5; color: #065f46; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
         .btn-add-task { background: #3b82f6; color: #fff; border: none; width: 100%; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
 
-        /* حالة المزامنة */
-        #sync-status { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: bold; color: #64748b; }
-        .syncing { color: #f59e0b !important; }
-        .synced { color: #059669 !important; }
+        #sync-status { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: bold; color: #64748b; padding: 5px 15px; border-radius: 20px; background: #e2e8f0; }
+        .syncing { color: #b45309 !important; background: #fef3c7 !important; }
+        .synced { color: #047857 !important; background: #d1fae5 !important; }
+        .error-sync { color: #b91c1c !important; background: #fee2e2 !important; }
 
         @media print {
             body { background: #fff; padding: 0; }
@@ -80,14 +80,14 @@
     <div id="dashboard">
         <h1 style="text-align: center; color: #1e3a8a;">نظام المتابعة والإنجاز - مجمع اللهابة</h1>
         <div class="cloud-bar">
-            <span id="global-sync-status"><i class="fas fa-cloud"></i> متصل بقاعدة البيانات (Supabase)</span>
+            <span id="global-sync-status" class="synced"><i class="fas fa-server"></i> جاري التحقق من السحابة...</span>
         </div>
         <div class="grid" id="main-grid"></div>
     </div>
 
     <div id="table-section" class="hidden">
         <div style="display:flex; justify-content: space-between; align-items:center; flex-wrap: wrap; gap: 10px;">
-            <button class="btn-action no-print" style="background:#4b5563; color:white;" onclick="goHome()">العودة للمرئيسية</button>
+            <button class="btn-action no-print" style="background:#4b5563; color:white;" onclick="goHome()">العودة للرئيسية</button>
             
             <div class="color-palette no-print">
                 <span style="font-size:12px; font-weight:bold; color:#475569;">تلوين مخصص:</span>
@@ -105,7 +105,7 @@
             </div>
 
             <div style="display: flex; gap: 15px; align-items: center;">
-                <span id="sync-status" class="no-print"><i class="fas fa-check-circle"></i> محفوظ</span>
+                <span id="sync-status" class="no-print"><i class="fas fa-check-circle"></i> محلي</span>
                 <h2 id="class-title" style="margin:0;"></h2>
                 <button class="btn-action btn-print no-print" onclick="window.print()"><i class="fas fa-print"></i> طباعة</button>
             </div>
@@ -155,15 +155,32 @@
 </div>
 
 <script>
-    // ==========================================
-    // 1. إعدادات قواعد البيانات والتليجرام
-    // ==========================================
-    const SUPABASE_URL = https://yqbhxeotqbyygbntazws.supabase.co;
+    // =========================================================================
+    // ⚠️ إعدادات السحابة والتليجرام (قم بتعديلها هنا) ⚠️
+    // =========================================================================
+    const SUPABASE_URL = https://yqbhxeotqbyygbntazws.supabase.co; 
     const SUPABASE_KEY = yqbhxeotqbyygbntazws;
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+    
+    // مفاتيح التليجرام التي استخرجتها سابقاً
     const TELE_TOKEN = "8609135687:AAHYkS2RzHqKEvv_yVAN97GolkiMZ13l1ys"; 
     const TELE_ID = 528941707;   
+
+    // تهيئة ذكية لـ Supabase لمنع تعطل النظام إذا لم يتم وضع المفاتيح
+    let supabaseApp = null;
+    let isCloudEnabled = false;
+    
+    try {
+        if(!SUPABASE_URL.includes("ضع_") && !SUPABASE_KEY.includes("ضع_")) {
+            supabaseApp = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            isCloudEnabled = true;
+            document.getElementById('global-sync-status').innerHTML = '<i class="fas fa-cloud"></i> متصل بقاعدة بيانات Supabase بنجاح';
+        } else {
+            document.getElementById('global-sync-status').innerHTML = '<i class="fas fa-exclamation-triangle"></i> يعمل النظام محلياً (الرجاء وضع مفاتيح Supabase في الكود)';
+            document.getElementById('global-sync-status').className = 'error-sync';
+        }
+    } catch(e) {
+        console.error("Supabase initialization error.");
+    }
 
     const studentsData = {
         "grade4": ["بدر ثنيان المطيري", "جمعان مطلق الصعنوني", "حمد عبدالهادي المري", "سلطان سعود الشريف", "عبدالعزيز فلاح المطيري", "عبدالعزيز محمد الدويش", "عبدالله ماجد المطيري", "عمر ضاري المطيري", "ماجد فيصل الدويش", "محمد عبدالفتاح محمد", "ناصر مزيد الراشد", "نايف هادي الراشد"],
@@ -188,10 +205,10 @@
 
     let activeKey = "";
     let currentActiveInput = null, currentActiveSIdx = null, currentActiveGIdx = null;
-    let syncTimer = null; // موقت للحفظ السحابي الذكي
+    let syncTimer = null; 
 
     // ==========================================
-    // 2. التهيئة والاتصال بقاعدة البيانات
+    // التهيئة والاتصال بقاعدة البيانات
     // ==========================================
     function init() {
         const grid = document.getElementById('main-grid');
@@ -213,19 +230,18 @@
         document.getElementById('lbl-grd').innerText = labels[key];
         document.getElementById('lbl-sub').innerText = (key.startsWith('sec1') || key.startsWith('sec2')) ? "التقنية الرقمية" : "المهارات الرقمية";
         
-        setSyncStatus('جاري الجلب من السحابة...', 'syncing');
-
-        // جلب البيانات من Supabase
-        const { data, error } = await supabase.from('class_records').select('*').eq('class_key', key).single();
-        
-        if (data) {
-            localStorage.setItem('final_daily_' + key, JSON.stringify(data.grades_data || {}));
-            let allTasks = JSON.parse(localStorage.getItem('class_tasks_v1')) || {};
-            allTasks[key] = data.tasks_data || null;
-            localStorage.setItem('class_tasks_v1', JSON.stringify(allTasks));
-            setSyncStatus('مُحدث ومتزامن', 'synced');
-        } else {
-            setSyncStatus('بيانات محلية', 'synced'); // إذا لم يوجد سجل مسبق
+        if(isCloudEnabled) {
+            setSyncStatus('جاري الجلب من السحابة...', 'syncing');
+            const { data, error } = await supabaseApp.from('class_records').select('*').eq('class_key', key).single();
+            if (data) {
+                localStorage.setItem('final_daily_' + key, JSON.stringify(data.grades_data || {}));
+                let allTasks = JSON.parse(localStorage.getItem('class_tasks_v1')) || {};
+                allTasks[key] = data.tasks_data || null;
+                localStorage.setItem('class_tasks_v1', JSON.stringify(allTasks));
+                setSyncStatus('مُحدث ومتزامن', 'synced');
+            } else {
+                setSyncStatus('جديد - يعمل محلياً', 'synced');
+            }
         }
 
         buildTable();
@@ -233,7 +249,7 @@
     }
 
     // ==========================================
-    // 3. بناء الجدول والألوان والانتقال بالإنتر
+    // بناء الجدول والتلوين
     // ==========================================
     function buildTable() {
         const tbody = document.getElementById('table-body');
@@ -299,7 +315,7 @@
     }
 
     // ==========================================
-    // 4. الحفظ والمزامنة السحابية الفورية (Supabase)
+    // الحفظ والمزامنة
     // ==========================================
     function saveData(sIdx, gIdx, val, bg) {
         let data = JSON.parse(localStorage.getItem('final_daily_' + activeKey)) || {};
@@ -309,18 +325,18 @@
         data[sIdx][gIdx] = { v: val, bg: bg !== null ? bg : currentBg };
         
         localStorage.setItem('final_daily_' + activeKey, JSON.stringify(data));
-        triggerCloudSync(); // استدعاء المزامنة
+        triggerCloudSync(); 
     }
 
-    // تقوم بالحفظ السحابي بعد التوقف عن الكتابة بثانيتين لتخفيف الضغط
     function triggerCloudSync() {
+        if(!isCloudEnabled) return;
         setSyncStatus('جاري الحفظ...', 'syncing');
         clearTimeout(syncTimer);
         syncTimer = setTimeout(async () => {
             const grades = JSON.parse(localStorage.getItem('final_daily_' + activeKey));
             const allTasks = JSON.parse(localStorage.getItem('class_tasks_v1')) || {};
             
-            const { error } = await supabase.from('class_records').upsert({ 
+            const { error } = await supabaseApp.from('class_records').upsert({ 
                 class_key: activeKey, 
                 grades_data: grades,
                 tasks_data: allTasks[activeKey] || null,
@@ -330,9 +346,9 @@
             if (!error) {
                 setSyncStatus('محفوظ سحابياً <i class="fas fa-check-double"></i>', 'synced');
             } else {
-                setSyncStatus('خطأ في الاتصال', 'syncing');
+                setSyncStatus('خطأ في الاتصال', 'error-sync');
             }
-        }, 2000);
+        }, 1500);
     }
 
     function setSyncStatus(msg, className) {
@@ -342,7 +358,7 @@
     }
 
     // ==========================================
-    // 5. إدارة المهام والإثباتات (عبر التليجرام)
+    // إدارة المهام والإثباتات (عبر التليجرام)
     // ==========================================
     function getTasksData() {
         let allTasks = JSON.parse(localStorage.getItem('class_tasks_v1')) || {};
