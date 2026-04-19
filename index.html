@@ -55,7 +55,9 @@
         th, td { border: 1px solid #000; text-align: center; padding: 4px; font-size: 11px; transition: background-color 0.2s; }
         .bg-gray { background: #e2e8f0; font-weight: bold; }
         .bg-dark { background: #1e293b; color: #fff; }
-        .student-name { text-align: right !important; padding-right: 10px !important; font-weight: bold; min-width: 160px; font-size: 13px; }
+        
+        /* تثبيت اسم الطالب عند التمرير الأفقي في الجداول العريضة */
+        .student-name { text-align: right !important; padding-right: 10px !important; font-weight: bold; min-width: 160px; font-size: 13px; position: sticky; right: 0; background: #fff; z-index: 1; border-left: 2px solid #000;}
         
         .grade-input, .att-input { width: 100%; height: 100%; border: none; text-align: center; font-weight: bold; background: transparent; outline: none; font-size: 14px; color: #000; padding: 4px 0; font-family: inherit;}
         td:focus-within { outline: 2px solid #3b82f6; outline-offset: -2px; }
@@ -88,6 +90,7 @@
         /* عدادات الغياب والحضور */
         .count-p { color: #059669; font-weight: 900; font-size: 14px; background: #d1fae5; }
         .count-a { color: #dc2626; font-weight: 900; font-size: 14px; background: #fee2e2; }
+        .att-cell { min-width: 25px; } /* ضمان عرض جيد لخانات الحضور */
 
         @media print {
             body { background: #fff; padding: 0; }
@@ -97,6 +100,7 @@
             tr { page-break-inside: avoid; }
             td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .grade-input, .att-input { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000 !important;}
+            .student-name { position: static; border-left: 1px solid #000; }
         }
     </style>
 </head>
@@ -127,7 +131,7 @@
         <p id="choice-class-name" style="color: #64748b; font-weight: bold; margin-bottom: 25px; font-size: 15px;"></p>
         
         <button class="btn-main btn-teacher" onclick="openGradesSection()"><i class="fas fa-star"></i> سجل الدرجات والمهام</button>
-        <button class="btn-main btn-attendance" onclick="openAttendanceSection()"><i class="fas fa-calendar-check"></i> سجل الحضور والغياب</button>
+        <button class="btn-main btn-attendance" onclick="openAttendanceSection()"><i class="fas fa-calendar-check"></i> سجل الحضور والغياب (فصل كامل)</button>
         <button class="btn-main btn-guest" onclick="closeChoiceModal()"><i class="fas fa-times"></i> إلغاء</button>
     </div>
 </div>
@@ -211,7 +215,7 @@
             <table id="attendance-table">
                 <thead>
                     <tr>
-                        <th colspan="34" style="border:none; padding-bottom:15px; background:#fff;">
+                        <th colspan="79" style="border:none; padding-bottom:15px; background:#fff;">
                             <div style="display:flex; justify-content:space-between; align-items:start; font-weight:bold; font-size:13px; line-height:1.6;">
                                 <div style="text-align:right;">المملكة العربية السعودية<br>وزارة التعليم<br>الإدارة العامة للتعليم بالمنطقة الشرقية<br>مجمع اللهابة التعليمي</div>
                                 <div style="text-align:center;"><img src="https://henka.sa/wp-content/uploads/2025/06/MOELogo.svg.png" width="130"><br><span style="font-size:20px; color: #059669;">سجل الحضور والغياب</span></div>
@@ -223,12 +227,12 @@
                     <tr class="bg-gray">
                         <th rowspan="2" width="3%">م</th>
                         <th rowspan="2" width="20%">اسم الطالب</th>
-                        <th colspan="30" style="background:#f1f5f9; color:#0f172a;">أيام / أسابيع الدراسة</th>
+                        <th colspan="75" style="background:#f1f5f9; color:#0f172a;">أيام الدراسة (الفصل الدراسي كامل)</th>
                         <th rowspan="2" width="5%" style="background:#fee2e2; color:#dc2626;">غياب<br>(غ)</th>
                         <th rowspan="2" width="5%" style="background:#d1fae5; color:#059669;">حضور<br>(ح)</th>
                     </tr>
                     <tr class="bg-gray" style="font-size: 10px;">
-                        <script>for(let i=1; i<=30; i++) document.write(`<th>${i}</th>`);</script>
+                        <script>for(let i=1; i<=75; i++) document.write(`<th>${i}</th>`);</script>
                     </tr>
                 </thead>
                 <tbody id="attendance-body"></tbody>
@@ -245,7 +249,7 @@
     // =========================================================================
     // ⚠️ إعدادات السحابة والتليجرام وكلمة المرور ⚠️
     // =========================================================================
-      const SUPABASE_URL = 'https://yqbhxeotqbyygbntazws.supabase.co'; 
+    const SUPABASE_URL = 'https://yqbhxeotqbyygbntazws.supabase.co'; 
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmh4ZW90cWJ5eWdibnRhendzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxODMyNzQsImV4cCI6MjA5MTc1OTI3NH0.SQ2D0UhRhLV1KpoRQZnrN6Y_1Yf_0UXwlpng1dEYLFo';
     
     // مفاتيح التليجرام التي استخرجتها سابقاً
@@ -253,7 +257,7 @@
     const TELE_ID = "528941707";    
     
     // كلمة المرور الخاصة بك كمعلم
-    const ADMIN_PASSWORD = "552255";  
+    const ADMIN_PASSWORD = "552255"; 
     const TIMEOUT_DURATION = 10 * 60 * 1000; 
 
     let isGuest = false;
@@ -396,7 +400,7 @@
     }
 
     // ==========================================
-    // سجل الدرجات والمهام
+    // سجل الدرجات والمهام (30 خانة)
     // ==========================================
     async function openGradesSection() {
         document.getElementById('choice-modal').classList.add('hidden');
@@ -404,7 +408,7 @@
         document.getElementById('shared-header').classList.remove('hidden');
         document.getElementById('grades-section').classList.remove('hidden');
         document.getElementById('attendance-section').classList.add('hidden');
-        document.getElementById('color-palette').classList.remove('hidden'); // إظهار الألوان
+        document.getElementById('color-palette').classList.remove('hidden'); 
         
         document.getElementById('lbl-grd-grade').innerText = labels[activeKey];
         document.getElementById('lbl-sub-grade').innerText = (activeKey.startsWith('sec1') || activeKey.startsWith('sec2')) ? "التقنية الرقمية" : "المهارات الرقمية";
@@ -436,7 +440,7 @@
     }
 
     // ==========================================
-    // سجل الحضور والغياب (الجديد)
+    // سجل الحضور والغياب (الموسع 75 خانة)
     // ==========================================
     async function openAttendanceSection() {
         document.getElementById('choice-modal').classList.add('hidden');
@@ -444,7 +448,7 @@
         document.getElementById('shared-header').classList.remove('hidden');
         document.getElementById('grades-section').classList.add('hidden');
         document.getElementById('attendance-section').classList.remove('hidden');
-        document.getElementById('color-palette').classList.add('hidden'); // إخفاء الألوان عن الحضور
+        document.getElementById('color-palette').classList.add('hidden'); 
         
         document.getElementById('lbl-grd-att').innerText = labels[activeKey];
         document.getElementById('lbl-sub-att').innerText = (activeKey.startsWith('sec1') || activeKey.startsWith('sec2')) ? "التقنية الرقمية" : "المهارات الرقمية";
@@ -461,16 +465,16 @@
 
         studentsData[activeKey].forEach((name, idx) => {
             let tr = document.createElement("tr");
-            let d = saved[idx] || Array(30).fill("");
+            let d = saved[idx] || Array(75).fill(""); // توسيع إلى 75 يوم
             let countP = 0, countA = 0;
             
             let html = `<td>${idx+1}</td><td class="student-name">${name}</td>`;
-            for(let i=0; i<30; i++) {
+            for(let i=0; i<75; i++) { // توسيع إلى 75 يوم
                 let val = d[i] || "";
                 let bg = calculateAutoBgColor(val, 'att');
                 if(val === 'ح') countP++;
                 if(val === 'غ') countA++;
-                html += `<td style="background-color: ${bg};"><input type="text" id="inp-a-${idx}-${i}" class="att-input" value="${val}" onfocus="setActiveCell(${idx}, ${i}, this, 'att')" oninput="handleInput(${idx}, ${i}, this, 'att')" onkeydown="handleKeyDown(event, ${idx}, ${i}, 'a')" ${readonlyAttr}></td>`;
+                html += `<td class="att-cell" style="background-color: ${bg};"><input type="text" id="inp-a-${idx}-${i}" class="att-input" value="${val}" onfocus="setActiveCell(${idx}, ${i}, this, 'att')" oninput="handleInput(${idx}, ${i}, this, 'att')" onkeydown="handleKeyDown(event, ${idx}, ${i}, 'a')" ${readonlyAttr}></td>`;
             }
             html += `<td class="count-a" id="count-a-${idx}">${countA}</td><td class="count-p" id="count-p-${idx}">${countP}</td>`;
             tr.innerHTML = html; tbody.appendChild(tr);
@@ -522,9 +526,9 @@
 
     function updateAttendanceCounters(sIdx) {
         const saved = JSON.parse(localStorage.getItem('attendance_daily_' + activeKey)) || {};
-        let d = saved[sIdx] || Array(30).fill("");
+        let d = saved[sIdx] || Array(75).fill("");
         let p = 0, a = 0;
-        for(let i=0; i<30; i++) {
+        for(let i=0; i<75; i++) { // توسيع إلى 75 يوم
             let v = typeof d[i] === 'object' ? d[i].v : d[i];
             if(v === 'ح') p++; if(v === 'غ') a++;
         }
@@ -533,7 +537,7 @@
     }
 
     function setActiveCell(sIdx, gIdx, input, type) {
-        if(isGuest || type === 'att') return; // لا تلوين يدوي للحضور
+        if(isGuest || type === 'att') return; 
         currentActiveInput = input; currentActiveSIdx = sIdx; currentActiveGIdx = gIdx;
     }
 
@@ -545,18 +549,19 @@
     }
 
     // ==========================================
-    // الحفظ السحابي
+    // الحفظ السحابي الذكي
     // ==========================================
     function saveData(sIdx, gIdx, val, bg, storageKey) {
         if(isGuest) return;
         let data = JSON.parse(localStorage.getItem(storageKey + activeKey)) || {};
-        if(!data[sIdx]) data[sIdx] = Array(30).fill("");
+        let limit = storageKey === 'final_daily_' ? 30 : 75; // 30 للدرجات، 75 للحضور
+        if(!data[sIdx]) data[sIdx] = Array(limit).fill("");
         
         if (storageKey === 'final_daily_') {
             let currentBg = (typeof data[sIdx][gIdx] === 'object' && data[sIdx][gIdx] !== null) ? (data[sIdx][gIdx].bg || "transparent") : "transparent";
             data[sIdx][gIdx] = { v: val, bg: bg !== null ? bg : currentBg };
         } else {
-            data[sIdx][gIdx] = val; // للحضور نحفظ القيمة فقط كنص
+            data[sIdx][gIdx] = val; 
         }
         
         localStorage.setItem(storageKey + activeKey, JSON.stringify(data));
