@@ -239,8 +239,8 @@
                         <th rowspan="2" width="3%">م</th>
                         <th rowspan="2" width="20%">اسم الطالب</th>
                         <th id="att-days-title" colspan="31" style="background:#f1f5f9; color:#0f172a;">أيام الشهر</th>
-                        <th rowspan="2" width="5%" style="background:#fee2e2; color:#dc2626;" title="إجمالي غياب العام الدراسي كامل">الغياب<br>الكلي</th>
-                        <th rowspan="2" width="5%" style="background:#d1fae5; color:#059669;" title="إجمالي حضور العام الدراسي كامل">الحضور<br>الكلي</th>
+                        <th rowspan="2" width="5%" style="background:#fee2e2; color:#dc2626;" title="إجمالي غياب الفصل/العام الدراسي كامل">الغياب<br>الكلي</th>
+                        <th rowspan="2" width="5%" style="background:#d1fae5; color:#059669;" title="إجمالي حضور الفصل/العام الدراسي كامل">الحضور<br>الكلي</th>
                     </tr>
                     <tr class="bg-gray" style="font-size: 11px;" id="attendance-days-head">
                         </tr>
@@ -259,7 +259,7 @@
     // =========================================================================
     // ⚠️ إعدادات السحابة والتليجرام وكلمة المرور ⚠️
     // =========================================================================
-     const SUPABASE_URL = 'https://yqbhxeotqbyygbntazws.supabase.co'; 
+    const SUPABASE_URL = 'https://yqbhxeotqbyygbntazws.supabase.co'; 
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmh4ZW90cWJ5eWdibnRhendzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxODMyNzQsImV4cCI6MjA5MTc1OTI3NH0.SQ2D0UhRhLV1KpoRQZnrN6Y_1Yf_0UXwlpng1dEYLFo';
     
     // مفاتيح التليجرام التي استخرجتها سابقاً
@@ -270,24 +270,21 @@
     const ADMIN_PASSWORD = "552255"; 
     const TIMEOUT_DURATION = 10 * 60 * 1000; 
 
-    // تعريف كافة الأشهر الدراسية
+    // تعريف أشهر الفصل الدراسي الثاني والثالث (من ديسمبر إلى يونيو)
     const academicMonths = [
-        { id: 'm1', name: 'أغسطس / سبتمبر', days: 31 },
-        { id: 'm2', name: 'أكتوبر', days: 31 },
-        { id: 'm3', name: 'نوفمبر', days: 30 },
-        { id: 'm4', name: 'ديسمبر', days: 31 },
-        { id: 'm5', name: 'يناير', days: 31 },
-        { id: 'm6', name: 'فبراير', days: 28 },
-        { id: 'm7', name: 'مارس', days: 31 },
-        { id: 'm8', name: 'أبريل', days: 30 },
-        { id: 'm9', name: 'مايو', days: 31 },
-        { id: 'm10', name: 'يونيو', days: 30 }
+        { id: 'dec', name: 'ديسمبر', days: 31 },
+        { id: 'jan', name: 'يناير', days: 31 },
+        { id: 'feb', name: 'فبراير', days: 28 },
+        { id: 'mar', name: 'مارس', days: 31 },
+        { id: 'apr', name: 'أبريل', days: 30 },
+        { id: 'may', name: 'مايو', days: 31 },
+        { id: 'jun', name: 'يونيو', days: 30 }
     ];
 
     // تحديد الشهر الحالي تلقائياً بناءً على شهر النظام
-    const sysMonthMap = { 7: 'm1', 8: 'm1', 9: 'm2', 10: 'm3', 11: 'm4', 0: 'm5', 1: 'm6', 2: 'm7', 3: 'm8', 4: 'm9', 5: 'm10' };
+    const sysMonthMap = { 11: 'dec', 0: 'jan', 1: 'feb', 2: 'mar', 3: 'apr', 4: 'may', 5: 'jun' };
     let currentSysMonth = new Date().getMonth();
-    let activeMonthId = sysMonthMap[currentSysMonth] || 'm1'; 
+    let activeMonthId = sysMonthMap[currentSysMonth] || 'apr'; 
 
     let isGuest = false;
     let supabaseApp = null;
@@ -482,8 +479,8 @@
         document.getElementById('lbl-grd-att').innerText = labels[activeKey];
         document.getElementById('lbl-sub-att').innerText = (activeKey.startsWith('sec1') || activeKey.startsWith('sec2')) ? "التقنية الرقمية" : "المهارات الرقمية";
         
-        // يعتمد الشهر الفعال تلقائياً بناءً على وقت جهازك، أو يعود للأول إذا لم يكن موجوداً
-        activeMonthId = sysMonthMap[new Date().getMonth()] || 'm1'; 
+        // يعتمد الشهر الفعال تلقائياً بناءً على وقت جهازك
+        activeMonthId = sysMonthMap[new Date().getMonth()] || 'apr'; 
         
         await loadClassData();
         buildMonthTabs();
@@ -515,12 +512,10 @@
         let currentMonth = academicMonths.find(m => m.id === activeMonthId);
         document.getElementById('current-month-title').innerText = `( شهر ${currentMonth.name} )`;
 
-        // بناء العناوين (الأيام) حسب الشهر المختار ديناميكياً
         for(let i=1; i<=currentMonth.days; i++) {
             theadDays.innerHTML += `<th>${i}</th>`;
         }
 
-        // تعديل الدمج (Colspan) ليناسب حجم الشهر
         document.getElementById('att-main-th').colSpan = currentMonth.days + 4;
         document.getElementById('att-days-title').colSpan = currentMonth.days;
 
@@ -530,13 +525,11 @@
         studentsData[activeKey].forEach((name, idx) => {
             let tr = document.createElement("tr");
             
-            // تهيئة بيانات الطالب لتناسب النظام الشهري
             let studentData = saved[idx] || {};
             if (Array.isArray(studentData)) studentData = {}; 
             
             let d = studentData[activeMonthId] || Array(currentMonth.days).fill("");
             
-            // حساب الإجمالي الشامل لجميع الأشهر
             let totalP = 0, totalA = 0;
             academicMonths.forEach(m => {
                 let mData = studentData[m.id] || [];
