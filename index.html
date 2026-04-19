@@ -14,7 +14,7 @@
         body { font-family: 'HelveticaSky', Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #111; }
         .container { max-width: 100%; margin: 0 auto; background: #fff; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         
-        /* شاشات منبثقة (الدخول والتخيير) */
+        /* شاشات منبثقة */
         .overlay-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(240, 242, 245, 0.95); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .box-modal { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); text-align: center; max-width: 450px; width: 90%; border-top: 5px solid #1e3a8a; }
         
@@ -26,7 +26,7 @@
         .btn-attendance { background: #059669; color: white; }
         .btn-attendance:hover { background: #047857; transform: translateY(-2px); }
         
-        /* حقل الباسوورد المخفي تماماً */
+        /* حقل الباسوورد المخفي */
         .password-input { 
             width: 100%; padding: 12px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 16px; text-align: center; font-family: inherit; margin-bottom: 10px; box-sizing: border-box;
             color: transparent !important; caret-color: transparent !important; text-shadow: none !important; -webkit-text-security: none; 
@@ -45,18 +45,23 @@
         .btn-logout { background: #ef4444; color: white; }
         .btn-logout:hover { background: #dc2626; }
 
+        /* تبويبات الأشهر */
+        .month-tabs { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+        .btn-tab { padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold; border: 1px solid #cbd5e1; background: #f1f5f9; color: #475569; transition: 0.2s; font-family: inherit; font-size: 13px;}
+        .btn-tab:hover { background: #e2e8f0; }
+        .btn-tab.active { background: #059669; color: white; border-color: #047857; box-shadow: 0 4px 10px rgba(5, 150, 105, 0.2); }
+
         .hidden { display: none !important; }
         
         body.guest-mode .no-guest { display: none !important; }
         body.guest-mode .grade-input, body.guest-mode .att-input { pointer-events: none; } 
 
-        .table-wrapper { overflow-x: auto; margin-top: 20px; }
+        .table-wrapper { overflow-x: auto; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; border: 2px solid #000; background: #fff; }
         th, td { border: 1px solid #000; text-align: center; padding: 4px; font-size: 11px; transition: background-color 0.2s; }
         .bg-gray { background: #e2e8f0; font-weight: bold; }
         .bg-dark { background: #1e293b; color: #fff; }
         
-        /* تثبيت اسم الطالب عند التمرير الأفقي في الجداول العريضة */
         .student-name { text-align: right !important; padding-right: 10px !important; font-weight: bold; min-width: 160px; font-size: 13px; position: sticky; right: 0; background: #fff; z-index: 1; border-left: 2px solid #000;}
         
         .grade-input, .att-input { width: 100%; height: 100%; border: none; text-align: center; font-weight: bold; background: transparent; outline: none; font-size: 14px; color: #000; padding: 4px 0; font-family: inherit;}
@@ -87,15 +92,14 @@
         .error-sync { color: #b91c1c !important; background: #fee2e2 !important; }
         .guest-badge { background: #8b5cf6; color: #fff; padding: 5px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; }
 
-        /* عدادات الغياب والحضور */
         .count-p { color: #059669; font-weight: 900; font-size: 14px; background: #d1fae5; }
         .count-a { color: #dc2626; font-weight: 900; font-size: 14px; background: #fee2e2; }
-        .att-cell { min-width: 25px; } /* ضمان عرض جيد لخانات الحضور */
+        .att-cell { min-width: 25px; } 
 
         @media print {
             body { background: #fff; padding: 0; }
             .container { box-shadow: none; max-width: 100%; padding: 0; border: none;}
-            .cloud-bar, #dashboard, .no-print, .tasks-manager { display: none !important; }
+            .cloud-bar, #dashboard, .no-print, .tasks-manager, .month-tabs { display: none !important; }
             thead { display: table-header-group !important; }
             tr { page-break-inside: avoid; }
             td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -131,7 +135,7 @@
         <p id="choice-class-name" style="color: #64748b; font-weight: bold; margin-bottom: 25px; font-size: 15px;"></p>
         
         <button class="btn-main btn-teacher" onclick="openGradesSection()"><i class="fas fa-star"></i> سجل الدرجات والمهام</button>
-        <button class="btn-main btn-attendance" onclick="openAttendanceSection()"><i class="fas fa-calendar-check"></i> سجل الحضور والغياب (فصل كامل)</button>
+        <button class="btn-main btn-attendance" onclick="openAttendanceSection()"><i class="fas fa-calendar-check"></i> سجل الحضور والغياب (مبوب بالأشهر)</button>
         <button class="btn-main btn-guest" onclick="closeChoiceModal()"><i class="fas fa-times"></i> إلغاء</button>
     </div>
 </div>
@@ -211,14 +215,21 @@
     </div>
 
     <div id="attendance-section" class="hidden">
+        
+        <div class="month-tabs no-print" id="month-tabs-container"></div>
+
         <div class="table-wrapper">
             <table id="attendance-table">
                 <thead>
                     <tr>
-                        <th colspan="79" style="border:none; padding-bottom:15px; background:#fff;">
+                        <th id="att-main-th" colspan="35" style="border:none; padding-bottom:15px; background:#fff;">
                             <div style="display:flex; justify-content:space-between; align-items:start; font-weight:bold; font-size:13px; line-height:1.6;">
                                 <div style="text-align:right;">المملكة العربية السعودية<br>وزارة التعليم<br>الإدارة العامة للتعليم بالمنطقة الشرقية<br>مجمع اللهابة التعليمي</div>
-                                <div style="text-align:center;"><img src="https://henka.sa/wp-content/uploads/2025/06/MOELogo.svg.png" width="130"><br><span style="font-size:20px; color: #059669;">سجل الحضور والغياب</span></div>
+                                <div style="text-align:center;">
+                                    <img src="https://henka.sa/wp-content/uploads/2025/06/MOELogo.svg.png" width="130"><br>
+                                    <span style="font-size:20px; color: #059669;">سجل الحضور والغياب</span><br>
+                                    <span id="current-month-title" style="color: #1e3a8a; font-weight: 900;"></span>
+                                </div>
                                 <div style="text-align:right;">مقرر: <span id="lbl-sub-att">...</span><br>الصف: <span id="lbl-grd-att">...</span><br>الفصل الدراسي الأول ١٤٤٧ هـ</div>
                             </div>
                             <hr style="border:0.5px solid #000; margin-top:10px;">
@@ -227,18 +238,17 @@
                     <tr class="bg-gray">
                         <th rowspan="2" width="3%">م</th>
                         <th rowspan="2" width="20%">اسم الطالب</th>
-                        <th colspan="75" style="background:#f1f5f9; color:#0f172a;">أيام الدراسة (الفصل الدراسي كامل)</th>
-                        <th rowspan="2" width="5%" style="background:#fee2e2; color:#dc2626;">غياب<br>(غ)</th>
-                        <th rowspan="2" width="5%" style="background:#d1fae5; color:#059669;">حضور<br>(ح)</th>
+                        <th id="att-days-title" colspan="31" style="background:#f1f5f9; color:#0f172a;">أيام الشهر</th>
+                        <th rowspan="2" width="5%" style="background:#fee2e2; color:#dc2626;" title="إجمالي غياب الفصل الدراسي كامل">الغياب<br>الكلي</th>
+                        <th rowspan="2" width="5%" style="background:#d1fae5; color:#059669;" title="إجمالي حضور الفصل الدراسي كامل">الحضور<br>الكلي</th>
                     </tr>
-                    <tr class="bg-gray" style="font-size: 10px;">
-                        <script>for(let i=1; i<=75; i++) document.write(`<th>${i}</th>`);</script>
-                    </tr>
+                    <tr class="bg-gray" style="font-size: 11px;" id="attendance-days-head">
+                        </tr>
                 </thead>
                 <tbody id="attendance-body"></tbody>
             </table>
             <div style="margin-top: 15px; font-weight: bold; font-size: 13px; color: #64748b; text-align: center;">
-                مفتاح السجل: ( ح = حضور | غ = غياب | ت = تأخر | ع = عذر )
+                مفتاح السجل: ( ح = حضور | غ = غياب | ت = تأخر | ع = عذر ) - يتم جمع الإجمالي للفصل الدراسي بالكامل.
             </div>
         </div>
     </div>
@@ -249,7 +259,7 @@
     // =========================================================================
     // ⚠️ إعدادات السحابة والتليجرام وكلمة المرور ⚠️
     // =========================================================================
-    const SUPABASE_URL = 'https://yqbhxeotqbyygbntazws.supabase.co'; 
+       const SUPABASE_URL = 'https://yqbhxeotqbyygbntazws.supabase.co'; 
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxYmh4ZW90cWJ5eWdibnRhendzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxODMyNzQsImV4cCI6MjA5MTc1OTI3NH0.SQ2D0UhRhLV1KpoRQZnrN6Y_1Yf_0UXwlpng1dEYLFo';
     
     // مفاتيح التليجرام التي استخرجتها سابقاً
@@ -260,12 +270,22 @@
     const ADMIN_PASSWORD = "552255"; 
     const TIMEOUT_DURATION = 10 * 60 * 1000; 
 
+    // تعريف الأشهر الدراسية
+    const academicMonths = [
+        { id: 'm1', name: 'أغسطس / سبتمبر', days: 31 },
+        { id: 'm2', name: 'أكتوبر', days: 31 },
+        { id: 'm3', name: 'نوفمبر', days: 30 },
+        { id: 'm4', name: 'ديسمبر', days: 31 },
+        { id: 'm5', name: 'يناير', days: 31 }
+    ];
+
     let isGuest = false;
     let supabaseApp = null;
     let isCloudEnabled = false;
     let inactivityTimer = null;
     let syncTimer = null; 
     let activeKey = "";
+    let activeMonthId = 'm1'; // الشهر الافتراضي عند فتح السجل
     let currentActiveInput = null, currentActiveSIdx = null, currentActiveGIdx = null;
 
     try {
@@ -400,7 +420,7 @@
     }
 
     // ==========================================
-    // سجل الدرجات والمهام (30 خانة)
+    // سجل الدرجات والمهام
     // ==========================================
     async function openGradesSection() {
         document.getElementById('choice-modal').classList.add('hidden');
@@ -440,7 +460,7 @@
     }
 
     // ==========================================
-    // سجل الحضور والغياب (الموسع 75 خانة)
+    // سجل الحضور والغياب (المبوب بالأشهر)
     // ==========================================
     async function openAttendanceSection() {
         document.getElementById('choice-modal').classList.add('hidden');
@@ -453,36 +473,82 @@
         document.getElementById('lbl-grd-att').innerText = labels[activeKey];
         document.getElementById('lbl-sub-att').innerText = (activeKey.startsWith('sec1') || activeKey.startsWith('sec2')) ? "التقنية الرقمية" : "المهارات الرقمية";
         
+        activeMonthId = 'm1'; // العودة للشهر الأول كافتراضي
         await loadClassData();
+        buildMonthTabs();
         buildAttendanceTable();
+    }
+
+    function buildMonthTabs() {
+        const container = document.getElementById('month-tabs-container');
+        container.innerHTML = "";
+        academicMonths.forEach(m => {
+            let btn = document.createElement('button');
+            btn.className = `btn-tab ${activeMonthId === m.id ? 'active' : ''}`;
+            btn.innerText = m.name;
+            btn.onclick = () => {
+                activeMonthId = m.id;
+                buildMonthTabs();
+                buildAttendanceTable();
+            };
+            container.appendChild(btn);
+        });
     }
 
     function buildAttendanceTable() {
         const tbody = document.getElementById('attendance-body');
+        const theadDays = document.getElementById('attendance-days-head');
         tbody.innerHTML = "";
+        theadDays.innerHTML = "";
+        
+        let currentMonth = academicMonths.find(m => m.id === activeMonthId);
+        document.getElementById('current-month-title').innerText = `( شهر ${currentMonth.name} )`;
+
+        // بناء العناوين (الأيام) حسب الشهر المختار
+        for(let i=1; i<=currentMonth.days; i++) {
+            theadDays.innerHTML += `<th>${i}</th>`;
+        }
+
+        // تعديل الدمج (Colspan) ليناسب حجم الشهر ديناميكياً
+        document.getElementById('att-main-th').colSpan = currentMonth.days + 4;
+        document.getElementById('att-days-title').colSpan = currentMonth.days;
+
         const saved = JSON.parse(localStorage.getItem('attendance_daily_' + activeKey)) || {};
         let readonlyAttr = isGuest ? 'readonly' : '';
 
         studentsData[activeKey].forEach((name, idx) => {
             let tr = document.createElement("tr");
-            let d = saved[idx] || Array(75).fill(""); // توسيع إلى 75 يوم
-            let countP = 0, countA = 0;
             
+            // تهيئة بيانات الطالب لتناسب النظام الشهري الجديد
+            let studentData = saved[idx] || {};
+            if (Array.isArray(studentData)) studentData = {}; // معالجة وحماية البيانات في حال كان هناك كود قديم
+            
+            let d = studentData[activeMonthId] || Array(currentMonth.days).fill("");
+            
+            // حساب الإجمالي الشامل لجميع الأشهر
+            let totalP = 0, totalA = 0;
+            academicMonths.forEach(m => {
+                let mData = studentData[m.id] || [];
+                mData.forEach(v => {
+                    let val = typeof v === 'object' ? v.v : v;
+                    if(val === 'ح') totalP++;
+                    if(val === 'غ') totalA++;
+                });
+            });
+
             let html = `<td>${idx+1}</td><td class="student-name">${name}</td>`;
-            for(let i=0; i<75; i++) { // توسيع إلى 75 يوم
+            for(let i=0; i<currentMonth.days; i++) {
                 let val = d[i] || "";
                 let bg = calculateAutoBgColor(val, 'att');
-                if(val === 'ح') countP++;
-                if(val === 'غ') countA++;
                 html += `<td class="att-cell" style="background-color: ${bg};"><input type="text" id="inp-a-${idx}-${i}" class="att-input" value="${val}" onfocus="setActiveCell(${idx}, ${i}, this, 'att')" oninput="handleInput(${idx}, ${i}, this, 'att')" onkeydown="handleKeyDown(event, ${idx}, ${i}, 'a')" ${readonlyAttr}></td>`;
             }
-            html += `<td class="count-a" id="count-a-${idx}">${countA}</td><td class="count-p" id="count-p-${idx}">${countP}</td>`;
+            html += `<td class="count-a" id="count-a-${idx}">${totalA}</td><td class="count-p" id="count-p-${idx}">${totalP}</td>`;
             tr.innerHTML = html; tbody.appendChild(tr);
         });
     }
 
     // ==========================================
-    // التلوين وإدخال البيانات (مشترك)
+    // التلوين وإدخال البيانات
     // ==========================================
     function handleKeyDown(event, sIdx, gIdx, prefix) {
         if(isGuest) return;
@@ -519,21 +585,28 @@
         if(type === 'grade') {
             saveData(sIdx, gIdx, val, autoBg, 'final_daily_');
         } else {
-            saveData(sIdx, gIdx, val, autoBg, 'attendance_daily_');
-            updateAttendanceCounters(sIdx);
+            saveAttData(sIdx, gIdx, val);
+            updateAttendanceCounters();
         }
     }
 
-    function updateAttendanceCounters(sIdx) {
+    function updateAttendanceCounters() {
         const saved = JSON.parse(localStorage.getItem('attendance_daily_' + activeKey)) || {};
-        let d = saved[sIdx] || Array(75).fill("");
-        let p = 0, a = 0;
-        for(let i=0; i<75; i++) { // توسيع إلى 75 يوم
-            let v = typeof d[i] === 'object' ? d[i].v : d[i];
-            if(v === 'ح') p++; if(v === 'غ') a++;
-        }
-        document.getElementById(`count-p-${sIdx}`).innerText = p;
-        document.getElementById(`count-a-${sIdx}`).innerText = a;
+        studentsData[activeKey].forEach((name, sIdx) => {
+            let studentData = saved[sIdx] || {};
+            let p = 0, a = 0;
+            academicMonths.forEach(m => {
+                let mData = studentData[m.id] || [];
+                mData.forEach(v => {
+                    let val = typeof v === 'object' ? v.v : v;
+                    if(val === 'ح') p++; if(val === 'غ') a++;
+                });
+            });
+            let elP = document.getElementById(`count-p-${sIdx}`);
+            let elA = document.getElementById(`count-a-${sIdx}`);
+            if(elP) elP.innerText = p;
+            if(elA) elA.innerText = a;
+        });
     }
 
     function setActiveCell(sIdx, gIdx, input, type) {
@@ -549,22 +622,29 @@
     }
 
     // ==========================================
-    // الحفظ السحابي الذكي
+    // الحفظ السحابي
     // ==========================================
     function saveData(sIdx, gIdx, val, bg, storageKey) {
         if(isGuest) return;
         let data = JSON.parse(localStorage.getItem(storageKey + activeKey)) || {};
-        let limit = storageKey === 'final_daily_' ? 30 : 75; // 30 للدرجات، 75 للحضور
-        if(!data[sIdx]) data[sIdx] = Array(limit).fill("");
+        if(!data[sIdx]) data[sIdx] = Array(30).fill("");
         
-        if (storageKey === 'final_daily_') {
-            let currentBg = (typeof data[sIdx][gIdx] === 'object' && data[sIdx][gIdx] !== null) ? (data[sIdx][gIdx].bg || "transparent") : "transparent";
-            data[sIdx][gIdx] = { v: val, bg: bg !== null ? bg : currentBg };
-        } else {
-            data[sIdx][gIdx] = val; 
-        }
+        let currentBg = (typeof data[sIdx][gIdx] === 'object' && data[sIdx][gIdx] !== null) ? (data[sIdx][gIdx].bg || "transparent") : "transparent";
+        data[sIdx][gIdx] = { v: val, bg: bg !== null ? bg : currentBg };
         
         localStorage.setItem(storageKey + activeKey, JSON.stringify(data));
+        triggerCloudSync(); 
+    }
+
+    function saveAttData(sIdx, gIdx, val) {
+        if(isGuest) return;
+        let data = JSON.parse(localStorage.getItem('attendance_daily_' + activeKey)) || {};
+        
+        if(!data[sIdx] || Array.isArray(data[sIdx])) data[sIdx] = {};
+        if(!data[sIdx][activeMonthId]) data[sIdx][activeMonthId] = Array(academicMonths.find(m => m.id === activeMonthId).days).fill("");
+        
+        data[sIdx][activeMonthId][gIdx] = val;
+        localStorage.setItem('attendance_daily_' + activeKey, JSON.stringify(data));
         triggerCloudSync(); 
     }
 
